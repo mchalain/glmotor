@@ -1,0 +1,5 @@
+GLUT=y
+GLFW=n
+EGL=n
+
+GLEW=n

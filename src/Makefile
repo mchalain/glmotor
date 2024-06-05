@@ -1,0 +1,16 @@
+bin-y+=glmotor
+glmotor_SOURCES+=main.c
+glmotor_SOURCES+=glmotor.c
+glmotor_SOURCES+=dynloader.c
+glmotor_SOURCES-$(GLUT)+=surfaceglut.c
+glmotor_LIBS-$(GLUT)+=glut
+glmotor_SOURCES-$(HAVE_GLFW3)+=surfaceglfw.c
+glmotor_LIBRARY-$(GLFW)+=glfw3
+glmotor_SOURCES-$(HAVE_WAYLAND_EGL)+=surfaceeglwl.c
+glmotor_LIBRARY-$(HAVE_WAYLAND_EGL)+=xkbcommon
+glmotor_LIBRARY-$(EGL)+=wayland-egl
+glmotor_LIBRARY-$(EGL)+=egl
+glmotor_LIBRARY+=gl
+glmotor_LIBS+=m
+glmotor_LIBRARY+=glu
+glmotor_LIBRARY-$(GLEW)+=glew
