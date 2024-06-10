@@ -143,8 +143,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, G
 {
 	GLuint objID = 0;
 #ifdef HAVE_GLESV2
-	warn("glmotor: object creation");
-	//objID = glGetAttribLocation(motor->programID, "gl_Vertex" );
+	//objID = glGetAttribLocation(motor->programID, name );
 	glBindAttribLocation(motor->programID, objID, name );
 //	glVertexAttribPointer(objID, 3, GL_FLOAT, GL_FALSE, 0, points);
 #else
@@ -172,7 +171,7 @@ GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 	glEnableVertexAttribArray(0);
 
 	glDrawArrays(GL_TRIANGLES, 0 /* first points inside points */, obj->npoints);
-	//glDisableVertexAttribArray(obj->ID);
+	glDisableVertexAttribArray(obj->ID);
 #else
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID);

@@ -11,5 +11,5 @@ void main (void)
 {
 	gl_Position = moving * gl_ProjectionMatrix * gl_ModelViewMatrix * vec4(vPosition, 1);
 	green = (float(1.0) + gl_Position.z ) / float(2.0);
-	color = vec4(0.5, green, 0.5, 1);
+	color = vec4(0.2, green, 0.2, 1);
 }

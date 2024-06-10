@@ -5,6 +5,7 @@
 #include <GL/gl.h>
 #include "glmotor.h"
 #include "loader.h"
+#include "log.h"
 
 static GLfloat g_angle = 0.0;
 static GLfloat g_camera[] = {0.0, 0.0, 100.0};
@@ -61,8 +62,22 @@ int main(int argc, char** argv)
 	scene_movecamera(scene, g_camera, target);
 #endif
 
-	GLMotor_Object_t *obj = object_load(motor, "vPosition", object);
-	scene_appendobject(scene, obj);
+	GLMotor_Object_t *obj = NULL;
+#ifdef OBJECT_STATIC
+	GLfloat vVertices[] = {
+		 0.0f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.0f, -0.0f, 0.5f,
+	};
+	obj = object_create(motor, "vPosition", sizeof(vVertices) / sizeof(GLfloat) / 3, vVertices);
+#else
+	obj = object_load(motor, "vPosition", object);
+#endif
+	if (obj != NULL)
+	{
+		scene_appendobject(scene, obj);
+	}
 
 	glmotor_run(motor, render, scene);
 	scene_destroy(scene);
