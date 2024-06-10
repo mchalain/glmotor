@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <math.h>
 
-#ifdef HAVE_GLEW
-#include <GL/glew.h>
+#ifndef HAVE_GLEW
+# include <GLES2/gl2.h>
+#else
+# include <GL/glew.h>
 #endif
 #include <GL/glu.h>
+
 #include "glmotor.h"
 #include "log.h"
 
@@ -39,7 +42,7 @@ static void display_log(GLuint instance)
 	free(log);
 }
 
-static void deleteShader(GLuint programID, GLuint fragmentID, GLuint vertexID)
+static void deleteProgram(GLuint programID, GLuint fragmentID, GLuint vertexID)
 {
 	if (programID)
 	{
@@ -56,68 +59,72 @@ static void deleteShader(GLuint programID, GLuint fragmentID, GLuint vertexID)
 		glDeleteShader(vertexID);
 }
 
-static char checkShaderCompilation(GLuint shaderID)
+static GLuint load_shader(GLenum type, GLchar *source, GLuint size)
 {
-	GLint compilationStatus = 0;
+	GLuint shaderID;
 
+	shaderID = glCreateShader(type);
+	if (shaderID == 0)
+	{
+		err("glmotor: shader creation error");
+		return 0;
+	}
+
+	if (size == -1)
+		glShaderSource(shaderID, 1, (const GLchar**)(&source), NULL);
+	else
+		glShaderSource(shaderID, 1, (const GLchar**)(&source), &size);
+	glCompileShader(shaderID);
+
+	GLint compilationStatus = 0;
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &compilationStatus);
 	if ( compilationStatus != GL_TRUE )
 	{
 		err("glmotor: shader compilation error");
 		display_log(shaderID);
+		glDeleteShader(shaderID);
 		return 0;
 	}
-
-	return 1;
+	return shaderID;
 }
 
-GLMOTOR_EXPORT GLuint build_program(GLMotor_t *motor, GLchar *vertexSource, GLuint vertexSize, GLchar *fragmentSource, GLuint fragmentSize)
+GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLuint vertexSize, GLchar *fragmentSource, GLuint fragmentSize)
 {
-	GLint programState = 0;
-	GLuint vertexID = glCreateShader(GL_VERTEX_SHADER);
-	GLuint fragmentID = glCreateShader(GL_FRAGMENT_SHADER);
-
-	warn("glmotor: vertex shader");
-	glShaderSource(vertexID, 1, (const GLchar**)(&vertexSource), &vertexSize);
-	glCompileShader(vertexID);
-	if ( !checkShaderCompilation(vertexID))
-	{
-		deleteShader(0, vertexID, 0);
+	warn("glmotor use : %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	GLuint vertexID = load_shader(GL_VERTEX_SHADER, vertexSource, vertexSize);
+	if (vertexID == 0)
 		return 0;
-	}
-
-	warn("glmotor: fragment shader");
-	glShaderSource(fragmentID, 1, (const GLchar**)(&fragmentSource), &fragmentSize);
-	glCompileShader(fragmentID);
-	if (!checkShaderCompilation(fragmentID))
-	{
-		deleteShader(0, vertexID, fragmentID);
+	GLuint fragmentID = load_shader(GL_FRAGMENT_SHADER, fragmentSource, fragmentSize);
+	if (fragmentID == 0)
 		return 0;
-	}
 
 	GLuint programID = glCreateProgram();
 
 	glAttachShader(programID, vertexID);
 	glAttachShader(programID, fragmentID);
 
+	glBindAttribLocation(motor->programID, 0, "vPosition");
+
 	glLinkProgram(programID);
 
+	GLint programState = 0;
 	glGetProgramiv(programID , GL_LINK_STATUS  , &programState);
 	if ( programState != GL_TRUE)
 	{
 		display_log(programID);
-		deleteShader(programID, fragmentID, vertexID);
+		deleteProgram(programID, fragmentID, vertexID);
 		return -1;
 	}
 
-    glDetachShader(programID, vertexID);
-    glDetachShader(programID, fragmentID);
+	glDetachShader(programID, vertexID);
+	glDetachShader(programID, fragmentID);
 
 	glDeleteShader(vertexID);
 	glDeleteShader(fragmentID);
 
 	glUseProgram(programID);
 
+	motor->programID = programID;
 	return programID;
 }
 
@@ -129,47 +136,51 @@ struct GLMotor_Object_s
 	GLMotor_t *motor;
 	GLuint ID;
 	GLuint npoints;
-	GLuint nfaces;
+	GLfloat *points;
 };
 
-GLMOTOR_EXPORT GLMotor_Object_t *create_object(GLMotor_t *motor, GLuint npoints, GLfloat *points)
+GLMOTOR_EXPORT GLMotor_Object_t *create_object(GLMotor_t *motor, GLchar *name, GLuint npoints, GLfloat *points)
 {
-	GLuint objID;
+	GLuint objID = 0;
+#ifdef HAVE_GLESV2
+	warn("glmotor: object creation");
+	//objID = glGetAttribLocation(motor->programID, "gl_Vertex" );
+	glBindAttribLocation(motor->programID, objID, name );
+//	glVertexAttribPointer(objID, 3, GL_FLOAT, GL_FALSE, 0, points);
+#else
 	glGenBuffers(1, &objID);
 	glBindBuffer(GL_ARRAY_BUFFER, objID);
-	glBufferData(GL_ARRAY_BUFFER, npoints * sizeof(GLfloat) * 3, points, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, npoints * sizeof(GLfloat) * 3 /* size of buffer */, points, GL_STATIC_DRAW);
+#endif
 
 	GLMotor_Object_t *obj;
 	obj = calloc(1, sizeof(*obj));
 	obj->motor = motor;
 	obj->ID = objID;
 	obj->npoints = npoints;
+	obj->points = points;
 
 	return obj;
 }
 
-GLMOTOR_EXPORT GLuint add_objectpoint(GLMotor_Object_t *obj, GLfloat *point)
-{
-	obj->npoints++;
-	glBindBuffer(GL_ARRAY_BUFFER, obj->ID);
-	return -1;
-}
-
 GLMOTOR_EXPORT GLuint draw_object(GLMotor_Object_t *obj)
 {
+	GLMotor_t *motor = obj->motor;
+#ifdef HAVE_GLESV2
+	//glVertexAttribPointer(obj->ID, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat)/* stride between elements */, obj->points);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, obj->points);
+	glEnableVertexAttribArray(0);
+
+	glDrawArrays(GL_TRIANGLES, 0 /* first points inside points */, obj->npoints);
+	//glDisableVertexAttribArray(obj->ID);
+#else
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID);
-	glVertexAttribPointer(
-	   0,
-	   3,
-	   GL_FLOAT,
-	   GL_FALSE,
-	   0,
-	   (void*)0 
-	);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, obj->npoints);
-	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(obj->ID);
+#endif
 	return 0;
 }
 
@@ -192,12 +203,14 @@ GLMOTOR_EXPORT GLMotor_Scene_t *create_scene(GLMotor_t *motor)
 {
 	glClearColor(0.5, 0.5, 0.5, 1.0);
 	glViewport(0, 0, motor->width, motor->height);
+#if 1
 	glClearDepthf(1.0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
 
-#if 0
+#if HAVE_GLEW
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(atan(tan(50.0 * 3.14159 / 360.0) / 1.0) * 360.0 / 3.141593, (GLfloat)motor->width / (GLfloat)motor->height, 0.1, 100.0);
@@ -216,8 +229,10 @@ GLMOTOR_EXPORT void move_camera(GLMotor_Scene_t *scene, const GLfloat *camera, c
 	const GLfloat *applyTarget = defaultTarget;
 	if (target != NULL)
 		applyTarget = target;
+#ifdef HAVE_GLEW
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+#endif
 	gluLookAt(camera[0], camera[1], camera[2],
 			applyTarget[0], applyTarget[1], applyTarget[2],
 			0, 1, 0);
@@ -235,7 +250,9 @@ GLMOTOR_EXPORT void draw_scene(GLMotor_Scene_t *scene)
 {
 	GLMotor_t *motor = scene->motor;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#ifdef HAVE_GLEW
 	glLoadIdentity();
+#endif
 
 	for (GLMotor_list_t *it = scene->objects; it != NULL; it = it->next)
 		draw_object((GLMotor_Object_t *)it->entity);
@@ -251,3 +268,19 @@ GLMOTOR_EXPORT void destroy_scene(GLMotor_Scene_t *scene)
 	free(scene);
 }
 
+/***********************************************************************
+ * GLMotor_Texture_t
+ **********************************************************************/
+struct GLMotor_Texture_s
+{
+	GLMotor_t *motor;
+	GLuint ID;
+	GLuint npoints;
+	GLuint nfaces;
+};
+
+GLMOTOR_EXPORT GLMotor_Texture_t *create_texture(GLMotor_t *motor, GLuint width, GLuint height, GLchar *map)
+{
+	GLMotor_Texture_t *texture = NULL;
+	return texture;
+}

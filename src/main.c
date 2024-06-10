@@ -2,17 +2,18 @@
 #include <math.h>
 #include <unistd.h>
 
+#include <GL/gl.h>
 #include "glmotor.h"
 #include "loader.h"
 
 static GLfloat g_angle = 0.0;
-static GLfloat g_camera[] = {0.0, 0.0, 5.0};
+static GLfloat g_camera[] = {0.0, 0.0, 100.0};
 
 static void render(void *data)
 {
 	GLMotor_Scene_t *scene = (GLMotor_Scene_t *)data;
-
 #if 0
+
 	g_camera[0] += 5.0 * sin(g_angle);
 	g_camera[2] += 5.0 * cos(g_angle);
 	g_angle += M_2_PI / 100;
@@ -24,6 +25,7 @@ static void render(void *data)
 
 int main(int argc, char** argv)
 {
+
 	const char *vertexshader = "data/simple.vert";
 	const char *fragmentshader = "data/simple.frag";
 	const char *object = "data/cube.obj";
@@ -50,14 +52,16 @@ int main(int argc, char** argv)
 	if (motor == NULL)
 		return -1;
 	
-	GLMotor_Scene_t *scene = create_scene(motor);
-
-	GLfloat target[] = {0.0, 0.0, 0.0};
-	move_camera(scene, g_camera, target);
-
 	load_shader(motor, vertexshader, fragmentshader);
 
-	GLMotor_Object_t *obj = load_obj(motor, object);
+	GLMotor_Scene_t *scene = create_scene(motor);
+
+#if 0
+	GLfloat target[] = {0.0, 0.0, 0.0};
+	move_camera(scene, g_camera, target);
+#endif
+
+	GLMotor_Object_t *obj = load_obj(motor, "vPosition", object);
 	append_object(scene, obj);
 
 	glmotor_run(motor, render, scene);

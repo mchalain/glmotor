@@ -1,3 +1,5 @@
 GLUT=n
 GLFW=n
 EGL=y
+GLESV2=y
+GLEW=n

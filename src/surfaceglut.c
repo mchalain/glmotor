@@ -1,8 +1,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#ifdef HAVE_GLESV2
+# error "glut doesn't support gles"
+#endif
 #ifdef HAVE_GLEW
-#include <GL/glew.h>
+# include <GL/glew.h>
 #endif
 #include <GL/freeglut.h>
 
@@ -49,7 +52,7 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	GLuint height = 480;
 	GLchar *name = "GLMotor";
 
-    glutInit(&argc, argv);
+	glutInit(&argc, argv);
 
 	glutInitWindowPosition(-1, -1);
 	glutInitWindowSize(width, height);

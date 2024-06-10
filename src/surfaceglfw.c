@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#ifdef HAVE_GLEW
-#include <GL/glew.h>
+#ifndef HAVE_GLEW
+# include <GLES2/gl2.h>
+#else
+# include <GL/glew.h>
 #endif
 #include <GLFW/glfw3.h>
 

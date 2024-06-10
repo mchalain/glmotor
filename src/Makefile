@@ -8,9 +8,12 @@ glmotor_SOURCES-$(HAVE_GLFW3)+=surfaceglfw.c
 glmotor_LIBRARY-$(GLFW)+=glfw3
 glmotor_SOURCES-$(HAVE_WAYLAND_EGL)+=surfaceeglwl.c
 glmotor_LIBRARY-$(HAVE_WAYLAND_EGL)+=xkbcommon
-glmotor_LIBRARY-$(EGL)+=wayland-egl
+glmotor_SOURCES-$(HAVE_X11)+=surfaceeglx.c
+#glmotor_LIBRARY-$(EGL)+=wayland-egl
+glmotor_LIBRARY-$(EGL)+=x11
 glmotor_LIBRARY-$(EGL)+=egl
-glmotor_LIBRARY+=gl
+glmotor_LIBRARY-$(GLEW)+=glew
+glmotor_LIBRARY-$(GLESV2)+=glesv2
+glmotor_LIBRARY-$(GLESV2:n=y)+=gl
 glmotor_LIBS+=m
 glmotor_LIBRARY+=glu
-glmotor_LIBRARY-$(GLEW)+=glew
