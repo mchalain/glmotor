@@ -139,7 +139,7 @@ struct GLMotor_Object_s
 	GLfloat *points;
 };
 
-GLMOTOR_EXPORT GLMotor_Object_t *create_object(GLMotor_t *motor, GLchar *name, GLuint npoints, GLfloat *points)
+GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint npoints, GLfloat *points)
 {
 	GLuint objID = 0;
 #ifdef HAVE_GLESV2
@@ -163,7 +163,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *create_object(GLMotor_t *motor, GLchar *name, G
 	return obj;
 }
 
-GLMOTOR_EXPORT GLuint draw_object(GLMotor_Object_t *obj)
+GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 {
 	GLMotor_t *motor = obj->motor;
 #ifdef HAVE_GLESV2
@@ -199,7 +199,7 @@ struct GLMotor_Scene_s
 	GLMotor_list_t *objects;
 };
 
-GLMOTOR_EXPORT GLMotor_Scene_t *create_scene(GLMotor_t *motor)
+GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 {
 	glClearColor(0.5, 0.5, 0.5, 1.0);
 	glViewport(0, 0, motor->width, motor->height);
@@ -223,7 +223,7 @@ GLMOTOR_EXPORT GLMotor_Scene_t *create_scene(GLMotor_t *motor)
 	return scene;
 }
 
-GLMOTOR_EXPORT void move_camera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target)
+GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target)
 {
 	const GLfloat defaultTarget[] = {0.0, 0.0, 0.0}; //target the center of the world
 	const GLfloat *applyTarget = defaultTarget;
@@ -238,7 +238,7 @@ GLMOTOR_EXPORT void move_camera(GLMotor_Scene_t *scene, const GLfloat *camera, c
 			0, 1, 0);
 }
 
-GLMOTOR_EXPORT void append_object(GLMotor_Scene_t *scene, GLMotor_Object_t *obj)
+GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t *obj)
 {
 	GLMotor_list_t *entry = calloc(1, sizeof(entry));
 	entry->entity = obj;
@@ -246,7 +246,7 @@ GLMOTOR_EXPORT void append_object(GLMotor_Scene_t *scene, GLMotor_Object_t *obj)
 	scene->objects = entry;
 }
 
-GLMOTOR_EXPORT void draw_scene(GLMotor_Scene_t *scene)
+GLMOTOR_EXPORT void scene_draw(GLMotor_Scene_t *scene)
 {
 	GLMotor_t *motor = scene->motor;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -255,10 +255,10 @@ GLMOTOR_EXPORT void draw_scene(GLMotor_Scene_t *scene)
 #endif
 
 	for (GLMotor_list_t *it = scene->objects; it != NULL; it = it->next)
-		draw_object((GLMotor_Object_t *)it->entity);
+		object_draw((GLMotor_Object_t *)it->entity);
 }
 
-GLMOTOR_EXPORT void destroy_scene(GLMotor_Scene_t *scene)
+GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene)
 {
 	for (GLMotor_list_t *it = scene->objects, *next = it->next; it != NULL; it = next, next = it->next)
 	{
@@ -279,7 +279,7 @@ struct GLMotor_Texture_s
 	GLuint nfaces;
 };
 
-GLMOTOR_EXPORT GLMotor_Texture_t *create_texture(GLMotor_t *motor, GLuint width, GLuint height, GLchar *map)
+GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, GLchar *map)
 {
 	GLMotor_Texture_t *texture = NULL;
 	return texture;

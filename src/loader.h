@@ -3,7 +3,7 @@
 
 #include "glmotor.h"
 
-GLMOTOR_EXPORT GLuint load_shader(GLMotor_t *motor, const char *vertex, const char *fragment);
-GLMOTOR_EXPORT GLMotor_Object_t * load_obj(GLMotor_t *motor, GLchar *name, const char *file);
+GLMOTOR_EXPORT GLuint glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragment);
+GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, const char *file);
 
 #endif

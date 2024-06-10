@@ -17,10 +17,10 @@ static void render(void *data)
 	g_camera[0] += 5.0 * sin(g_angle);
 	g_camera[2] += 5.0 * cos(g_angle);
 	g_angle += M_2_PI / 100;
-	move_camera(scene, g_camera, NULL);
+	scene_movecamera(scene, g_camera, NULL);
 #endif
 
-	draw_scene(scene);
+	scene_draw(scene);
 }
 
 int main(int argc, char** argv)
@@ -52,19 +52,19 @@ int main(int argc, char** argv)
 	if (motor == NULL)
 		return -1;
 	
-	load_shader(motor, vertexshader, fragmentshader);
+	glmotor_load(motor, vertexshader, fragmentshader);
 
-	GLMotor_Scene_t *scene = create_scene(motor);
+	GLMotor_Scene_t *scene = scene_create(motor);
 
 #if 0
 	GLfloat target[] = {0.0, 0.0, 0.0};
-	move_camera(scene, g_camera, target);
+	scene_movecamera(scene, g_camera, target);
 #endif
 
-	GLMotor_Object_t *obj = load_obj(motor, "vPosition", object);
-	append_object(scene, obj);
+	GLMotor_Object_t *obj = object_load(motor, "vPosition", object);
+	scene_appendobject(scene, obj);
 
 	glmotor_run(motor, render, scene);
-	destroy_scene(scene);
+	scene_destroy(scene);
 	glmotor_destroy(motor);
 }

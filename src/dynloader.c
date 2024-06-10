@@ -52,7 +52,7 @@ static GLint readFile(const char* fileName, char** fileContent)
 	return fileSize;
 }
 
-GLMOTOR_EXPORT GLuint load_shader(GLMotor_t *motor, const char *vertex, const char *fragment)
+GLMOTOR_EXPORT GLuint glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragment)
 {
 	GLchar* vertexSource = NULL;
 	GLchar* fragmentSource = NULL;
@@ -71,7 +71,7 @@ GLMOTOR_EXPORT GLuint load_shader(GLMotor_t *motor, const char *vertex, const ch
 	return programID;
 }
 
-GLMOTOR_EXPORT GLMotor_Object_t * load_obj(GLMotor_t *motor, GLchar *name, const char *fileName)
+GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, const char *fileName)
 {
 	FILE* pFile = NULL;
 	GLint fileSize = 0;
@@ -137,7 +137,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * load_obj(GLMotor_t *motor, GLchar *name, const
 		}
 	} while (ret != 0);
 
-	GLMotor_Object_t *obj = create_object(motor, name, vertex.npoints, vertex.values);
+	GLMotor_Object_t *obj = object_create(motor, name, vertex.npoints, vertex.values);
 	fclose(pFile);
 	return obj;
 }
@@ -185,7 +185,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t * load_texture(GLMotor_t *motor, char *fileName
 	fclose(f);
 
 	GLMotor_Texture_t *texture = NULL;
-	texture = create_texture(motor, width, height, buffer);
+	texture = texture_create(motor, width, height, buffer);
 	free(buffer);
 	return texture;
 }

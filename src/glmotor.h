@@ -26,17 +26,17 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor);
 
 typedef struct GLMotor_Object_s GLMotor_Object_t;
-GLMOTOR_EXPORT GLMotor_Object_t *create_object(GLMotor_t *motor, GLchar *name, GLuint npoints, GLfloat *points);
-GLMOTOR_EXPORT GLuint draw_object(GLMotor_Object_t *obj);
+GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint npoints, GLfloat *points);
+GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj);
 
 typedef struct GLMotor_Texture_s GLMotor_Texture_t;
-GLMOTOR_EXPORT GLMotor_Texture_t *create_texture(GLMotor_t *motor, GLuint width, GLuint height, GLchar *map);
+GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, GLchar *map);
 
 typedef struct GLMotor_Scene_s GLMotor_Scene_t;
-GLMOTOR_EXPORT GLMotor_Scene_t *create_scene(GLMotor_t *motor);
-GLMOTOR_EXPORT void append_object(GLMotor_Scene_t *scene, GLMotor_Object_t *obj);
-GLMOTOR_EXPORT void move_camera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target);
-GLMOTOR_EXPORT void draw_scene(GLMotor_Scene_t *scene);
-GLMOTOR_EXPORT void destroy_scene(GLMotor_Scene_t *scene);
+GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor);
+GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t *obj);
+GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target);
+GLMOTOR_EXPORT void scene_draw(GLMotor_Scene_t *scene);
+GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene);
 
 #endif
