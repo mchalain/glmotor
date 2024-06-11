@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
+#include <string.h>
 
 #ifndef HAVE_GLEW
 # include <GLES2/gl2.h>
@@ -141,6 +142,7 @@ struct GLMotor_Object_s
 	GLuint npoints;
 	GLuint nfaces;
 
+	GLfloat color[4];
 	GLintptr offsetcolors;
 	GLintptr offsetuvs;
 	GLintptr offsetnormals;
@@ -221,6 +223,8 @@ GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, 
 	offset += obj->ncolors * sizeof(GLfloat) * 4;
 	glBufferSubData(GL_ARRAY_BUFFER, offset, ncolors * sizeof(GLfloat) * 4, colors);
 	obj->ncolors += ncolors;
+	if (obj->ncolors == 1)
+		memcpy(obj->color, colors, ncolors * sizeof(GLfloat) * 4);
 	return 0;
 }
 
@@ -250,7 +254,11 @@ GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	if (obj->ncolors)
+	if (obj->ncolors == 1)
+	{
+		glVertexAttrib4fv ( 1, obj->color );
+	}
+	else if (obj->ncolors)
 	{
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, obj->offsetcolors, (void*)0);
