@@ -17,7 +17,6 @@ static struct wl_display *display;
 static struct wl_compositor *compositor = NULL;
 static struct wl_shell *shell = NULL;
 static struct xdg_wm_base *xdg_wm_base = NULL;
-static EGLDisplay egl_display;
 static struct wl_seat *seat = NULL;
 static struct xkb_context *xkb_context;
 static struct xkb_keymap *keymap = NULL;
@@ -33,7 +32,7 @@ struct GLMotor_Surface_s
 	struct wl_shell_surface *shell_surface;
 	struct wl_egl_window *egl_window;
 	EGLSurface egl_surface;
-};
+} *window = NULL;
 
 // listeners
 static void keyboard_keymap (void *data, struct wl_keyboard *keyboard, uint32_t format, int32_t fd, uint32_t size) {
@@ -163,12 +162,8 @@ static void shell_surface_popup_done (void *data, struct wl_shell_surface *shell
 }
 static struct wl_shell_surface_listener shell_surface_listener = {&shell_surface_ping, &shell_surface_configure, &shell_surface_popup_done};
 
-GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
+EGLNativeWindowType native_createwindow(GLuint width, GLuint height, const GLchar *name);
 {
-	GLuint width = 640;
-	GLuint height = 480;
-	GLchar *name = "GLMotor";
-
 	/** environment management */
 	display = wl_display_connect(NULL);
 	if (display == NULL)
@@ -179,25 +174,8 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	struct wl_registry *registry = wl_display_get_registry(display);
 	wl_registry_add_listener(registry, &registry_listener, NULL);
 	wl_display_roundtrip(display);
-	
-	egl_display = eglGetDisplay(display);
-	eglInitialize (egl_display, NULL, NULL);
 
-	/** window creation */
-	eglBindAPI(EGL_OPENGL_API);
-	EGLint attributes[] = {
-		EGL_RED_SIZE, 8,
-		EGL_GREEN_SIZE, 8,
-		EGL_BLUE_SIZE, 8,
-	EGL_NONE};
-	EGLConfig config;
-	EGLint num_config;
-	eglChooseConfig(egl_display, attributes, &config, 1, &num_config);
-
-	GLMotor_Surface_t *window = calloc(1, sizeof(*window));
-
-	window->egl_context = eglCreateContext(egl_display, config, EGL_NO_CONTEXT, NULL);
-
+	window = calloc(1, sizeof(*window);
 	window->surface =
 		wl_compositor_create_surface(compositor);
 	if (window->surface == NULL)
@@ -226,43 +204,27 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 
 	window->egl_window =
 		wl_egl_window_create(window->surface, width, height);
-	window->egl_surface =
-		eglCreateWindowSurface(egl_display, config, window->egl_window, NULL);
-
-	GLMotor_t *motor = calloc(1, sizeof(*motor));
-	motor->width = width;
-	motor->height = height;
-	motor->surf = window;
-
-	eglMakeCurrent(egl_display, window->egl_surface, window->egl_surface, window->egl_context);
-
-	return motor;
+	return window->egl_window;
 }
 
-GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata)
+EGLNativeDisplayType native_display()
 {
-	while (running)
-	{
-		wl_display_dispatch_pending (display);
-		draw(drawdata);
-		eglSwapBuffers(egl_display, motor->surf->egl_surface);
-	}
-	return 0;
+	if (display == NULL)
+		/** environment management */
+		display = XOpenDisplay(NULL);
+	return (EGLNativeDisplayType)display;
 }
 
-GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
+GLboolean native_running(EGLNativeWindowType native_win)
 {
-	GLMotor_Surface_t *window = motor->surf;
+	wl_display_dispatch_pending (display);
+	return runnning;
+}
 
-	eglDestroySurface(egl_display, window->egl_surface);
+void native_destroy(GLMotor_t *motor)
+{
 	wl_egl_window_destroy(window->egl_window);
 	wl_shell_surface_destroy(window->shell_surface);
 	wl_surface_destroy(window->surface);
-	eglDestroyContext(egl_display, window->egl_context);
-
-	free(window);
-	free(motor);
-
-	eglTerminate(egl_display);
 	wl_display_disconnect(display);
 }
