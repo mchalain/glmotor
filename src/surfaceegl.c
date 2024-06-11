@@ -8,25 +8,11 @@
 #include <EGL/egl.h>
 #include <GL/gl.h>
 
-#include  <X11/Xlib.h>
-#include  <X11/Xatom.h>
-#include  <X11/Xutil.h>
-
 #define GLMOTOR_SURFACE_S struct GLMotor_Surface_s
 #include "glmotor.h"
 #include "log.h"
+#include "eglnative.h"
 
-#include  <X11/Xlib.h>
-#include  <X11/Xatom.h>
-#include  <X11/Xutil.h>
-
-#ifndef TRUE
-#define TRUE GL_TRUE
-#define FALSE GL_FALSE
-#endif
-
-// X11 related local variables
-static Display *display = NULL;
 static EGLDisplay* egl_display = NULL;
 
 static char running = 1;
@@ -38,81 +24,6 @@ struct GLMotor_Surface_s
 	EGLSurface egl_surface;
 };
 
-static GLboolean native_running(EGLNativeWindowType native_win)
-{
-	XEvent xev;
-	KeySym key;
-	GLboolean running = GL_TRUE;
-	char text;
-
-	while (XPending(display))
-	{
-		XNextEvent(display, &xev);
-		if (xev.type == KeyPress)
-		{
-			if (XLookupString(&xev.xkey,&text,1,&key,0)==1)
-			{
-				if (text == 'q')
-					running = GL_FALSE;
-			}
-			if (xev.xkey.keycode == 0x09)
-				running = GL_FALSE;
-		}
-		if ( xev.type == DestroyNotify )
-			running = GL_FALSE;
-	}
-	return running;
-}
-
-static EGLNativeWindowType create_nativewindow(GLuint width, GLuint height, const GLchar *name)
-{
-	/** environment management */
-	display = XOpenDisplay(NULL);
-	if (display == NULL)
-	{
-		err("glmotor: wayland connection error %m");
-		return 0;
-	}
-	Window root = DefaultRootWindow(display);
-
-	XSetWindowAttributes swa;
-	swa.event_mask  =  ExposureMask | PointerMotionMask | KeyPressMask;
-	Window win;
-	win = XCreateWindow(
-				display, root,
-				0, 0, width, height, 0,
-				CopyFromParent, InputOutput,
-				CopyFromParent, CWEventMask,
-				&swa );
-
-	XSetWindowAttributes  xattr;
-	xattr.override_redirect = FALSE;
-	XChangeWindowAttributes(display, win, CWOverrideRedirect, &xattr );
-
-	XWMHints hints;
-	hints.input = TRUE;
-	hints.flags = InputHint;
-	XSetWMHints(display, win, &hints);
-
-	XMapWindow(display, win);
-	XStoreName(display, win, name);
-
-	Atom wm_state;
-	wm_state = XInternAtom(display, "_NET_WM_STATE", FALSE);
-
-	XEvent xev;
-	memset(&xev, 0, sizeof(xev) );
-	xev.type                 = ClientMessage;
-	xev.xclient.window       = win;
-	xev.xclient.message_type = wm_state;
-	xev.xclient.format       = 32;
-	xev.xclient.data.l[0]    = 1;
-	xev.xclient.data.l[1]    = FALSE;
-	XSendEvent(display, DefaultRootWindow(display ),
-		FALSE, SubstructureNotifyMask, &xev );
-	return (EGLNativeWindowType) win;
-}
-
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 {
 	GLuint width = 640;
@@ -120,11 +31,11 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	GLchar *name = "GLMotor";
 
 	EGLNativeWindowType native_win;
-	native_win = create_nativewindow(width, height, name);
+	native_win = native_createwindow(width, height, name);
 	if (native_win == 0)
 		return NULL;
 
-	egl_display = eglGetDisplay(display);
+	egl_display = eglGetDisplay(native_display());
 	EGLint majorVersion;
 	EGLint minorVersion;
 	eglInitialize(egl_display, &majorVersion, &minorVersion);
