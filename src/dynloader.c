@@ -85,6 +85,9 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 
 	GLuint npoints = 0;
 	GLuint nfaces = 0;
+	GLuint ntextures = 0;
+	GLuint nnormals = 0;
+	GLuint ncolors = 0;
 	int ret = 0;
 	do
 	{
@@ -92,7 +95,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		ret = fread(line, sizeof(char), 120, pFile);
 		if (ret < 0)
 		{
-			err("glmotor: object file malformated %m");
+			err("glmotor: object file misformated %m");
 			break;
 		}
 		char *end = strchr(line, '\n');
@@ -102,15 +105,21 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			fseek(pFile, end - line + 1, SEEK_CUR);
 			*end = '\0';
 		}
-		if (! strncmp("v", line, 1))
+		if (! strncmp("vc", line, 2))
 		{
-			npoints++;
+			ncolors++;
 		}
 		else if (! strncmp("vt", line, 2))
 		{
+			ntextures++;
 		}
 		else if (! strncmp("vn", line, 2))
 		{
+			nnormals++;
+		}
+		else if (! strncmp("v", line, 1))
+		{
+			npoints++;
 		}
 		else if (! strncmp("f", line, 1))
 		{
@@ -119,14 +128,19 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 	} while (ret != 0);
 	fseek(pFile, 0, SEEK_SET);
 
+	if ((ncolors && ncolors != npoints) ||
+		(ntextures && ntextures != npoints) ||
+		(nnormals && nnormals != npoints))
+		err("glmotor: object file misformated not enought colors, textures or normals");
 	GLMotor_Object_t *obj = object_create(motor, name, npoints, nfaces);
+	GLuint numline = 0;
 	do
 	{
 		char line[120] = {0};
 		ret = fread(line, sizeof(char), 120, pFile);
 		if (ret < 0)
 		{
-			err("glmotor: object file malformated %m");
+			err("glmotor: object file misformated %m");
 			break;
 		}
 		char *end = strchr(line, '\n');
@@ -136,23 +150,59 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			fseek(pFile, end - line + 1, SEEK_CUR);
 			*end = '\0';
 		}
-		if (! strncmp("v", line, 1))
+		numline++;
+		if (! strncmp("vc", line, 2))
+		{
+			GLfloat color[4] = {0};
+			int ret = sscanf(line + 2, "%f %f %f %f",
+				&color[0], &color[1], &color[2], &color[3]);
+			if (ret == 3)
+			{
+				color[3] = 1.0f;
+				ret = 4;
+			}
+			if (ret != 4)
+			{
+				err("glmotor: object vertex misformated vc %d line %u", ret, numline);
+				break;
+			}
+			object_appendcolor(obj, 1, color);
+		}
+		else if (! strncmp("vt", line, 2))
+		{
+			GLfloat uv[3] = {0};
+			int ret = sscanf(line + 2, "%f %f",
+				&uv[0], &uv[1]);
+			if (ret != 2)
+			{
+				err("glmotor: object vertex misformated vt %d line %u", ret, numline);
+				break;
+			}
+			object_appenduv(obj, 1, uv);
+		}
+		else if (! strncmp("vn", line, 2))
+		{
+			GLfloat normal[3] = {0};
+			int ret = sscanf(line + 2, "%f %f %f",
+				&normal[0], &normal[1], &normal[2]);
+			if (ret != 3)
+			{
+				err("glmotor: object vertex misformated vn %d line %u", ret, numline);
+				break;
+			}
+			object_appendnormal(obj, 1, normal);
+		}
+		else if (! strncmp("v", line, 1))
 		{
 			GLfloat point[3] = {0};
 			int ret = sscanf(line + 1, "%f %f %f",
 				&point[0], &point[1], &point[2]);
 			if (ret != 3)
 			{
-				err("glmotor: object vertex malformated %d", ret);
+				err("glmotor: object vertex misformated v %d line %u", ret, numline);
 				break;
 			}
 			object_appendpoint(obj, 1, point);
-		}
-		else if (! strncmp("vt", line, 2))
-		{
-		}
-		else if (! strncmp("vn", line, 2))
-		{
 		}
 		else if (! strncmp("f", line, 1))
 		{
@@ -192,7 +242,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			}
 			if (ret != 3 * format)
 			{
-				err("glmotor: object vertex malformated %d", ret);
+				err("glmotor: object vertex misformated f %d line %u", ret, numline);
 				break;
 			}
 			object_appendface(obj, 1, position);
