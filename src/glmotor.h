@@ -26,9 +26,11 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor);
 
 typedef struct GLMotor_Object_s GLMotor_Object_t;
-GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint maxpoints);
+GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint maxpoints, GLuint maxfaces);
 GLMOTOR_EXPORT GLuint object_appendpoint(GLMotor_Object_t *obj, GLuint npoints, GLfloat points[]);
+GLMOTOR_EXPORT GLuint object_appendface(GLMotor_Object_t *obj, GLuint nfaces, GLuint face[]);
 GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj);
+GLMOTOR_EXPORT GLuint object_destroy(GLMotor_Object_t *obj);
 
 typedef struct GLMotor_Texture_s GLMotor_Texture_t;
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, GLchar *map);

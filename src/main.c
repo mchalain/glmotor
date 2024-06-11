@@ -70,7 +70,19 @@ int main(int argc, char** argv)
 		 0.5f, -0.5f, -0.5f,
 		 0.0f, -0.0f, 0.5f,
 	};
-	obj = object_create(motor, "vPosition", sizeof(vVertices) / sizeof(GLfloat) / 3, vVertices);
+	GLuint vFaces[] = {
+		0, 1, 2,
+		0, 2, 3,
+		0, 1, 3,
+		1, 2, 3,
+	};
+	GLuint size = sizeof(vVertices) / sizeof(GLfloat) / 3;
+	GLuint nfaces = sizeof(vFaces) / sizeof(GLuint) / 3;
+
+	obj = object_create(motor, "vPosition", size, nfaces);
+	object_appendpoint(obj, size, &vVertices[0]);
+
+	object_appendface(obj, nfaces, &vFaces[0]);
 #else
 	obj = object_load(motor, "vPosition", object);
 #endif

@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 #ifndef HAVE_GLEW
 # include <GLES2/gl2.h>
@@ -134,52 +135,88 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 struct GLMotor_Object_s
 {
 	GLMotor_t *motor;
-	GLuint ID;
+	GLuint ID[2];
 	GLuint maxpoints;
+	GLuint maxfaces;
 	GLuint npoints;
-	GLfloat *points;
+	GLuint nfaces;
 };
 
-GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint maxpoints)
+GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint maxpoints,
+		GLuint maxfaces)
 {
-	GLuint objID = 0;
-	glGenBuffers(1, &objID);
-	glBindBuffer(GL_ARRAY_BUFFER, objID);
-	glBufferData(GL_ARRAY_BUFFER, maxpoints * sizeof(GLfloat) * 3 /* size of buffer */, NULL, GL_STATIC_DRAW);
-	glBindAttribLocation(motor->programID, objID, name );
+	GLuint objID[2] = {0};
+	glGenBuffers(2, objID);
+	glBindBuffer(GL_ARRAY_BUFFER, objID[0]);
+	GLsizeiptr size = maxpoints * sizeof(GLfloat) * 3;
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+
+	if (maxfaces)
+	{
+		GLsizeiptr size = maxfaces * sizeof(GLuint) * 3;
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objID[1]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+		glBindAttribLocation(motor->programID, objID[1], name );
+	}
+	else
+		glBindAttribLocation(motor->programID, objID[0], name );
 
 	GLMotor_Object_t *obj;
 	obj = calloc(1, sizeof(*obj));
 	obj->motor = motor;
-	obj->ID = objID;
+	obj->ID[0] = objID[0];
+	obj->ID[1] = objID[1];
 	obj->maxpoints = maxpoints;
+	obj->maxfaces = maxfaces;
 
 	return obj;
 }
 
 GLMOTOR_EXPORT GLuint object_appendpoint(GLMotor_Object_t *obj, GLuint npoints, GLfloat points[])
 {
-	glBindBuffer(GL_ARRAY_BUFFER, obj->ID);
-	glBufferSubData(GL_ARRAY_BUFFER, obj->npoints * sizeof(GLfloat) * 3, npoints * sizeof(GLfloat) * 3, points);
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
+	GLuint offset = 0;
+	offset += obj->npoints * sizeof(GLfloat) * 3;
+	glBufferSubData(GL_ARRAY_BUFFER, offset, npoints * sizeof(GLfloat) * 3, points);
 	obj->npoints += npoints;
+	return 0;
+}
+
+GLMOTOR_EXPORT GLuint object_appendface(GLMotor_Object_t *obj, GLuint nfaces, GLuint face[])
+{
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
+	GLuint offset = 0;
+	offset += obj->nfaces * sizeof(GLuint) * 3;
+	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, nfaces * sizeof(GLuint) * 3, face);
+	obj->nfaces += nfaces;
 	return 0;
 }
 
 GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 {
 	GLMotor_t *motor = obj->motor;
-	glBindBuffer(GL_ARRAY_BUFFER, obj->ID);
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	if (obj->nfaces)
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
+	}
 
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, obj->npoints);
-	glDisableVertexAttribArray(obj->ID);
-	return 0;
+	if (obj->nfaces && obj->nfaces < UINT_MAX)
+		glDrawElements(GL_TRIANGLE_STRIP, obj->nfaces * 3, GL_UNSIGNED_INT, 0);
+	else
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, obj->npoints);
+	glDisableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0 );
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0 );
+   	return 0;
 }
 
 GLMOTOR_EXPORT void destroy_object(GLMotor_Object_t *obj)
 {
-	glDeleteBuffers(1, &obj->ID);
+	glDeleteBuffers(2, obj->ID);
 	free(obj);
 }
 
