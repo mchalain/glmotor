@@ -84,6 +84,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 	}
 
 	GLuint npoints = 0;
+	GLuint nfaces = 0;
 	int ret = 0;
 	do
 	{
@@ -113,11 +114,12 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		}
 		else if (! strncmp("f", line, 1))
 		{
+			nfaces++;
 		}
 	} while (ret != 0);
 	fseek(pFile, 0, SEEK_SET);
 
-	GLMotor_Object_t *obj = object_create(motor, name, npoints, NULL);
+	GLMotor_Object_t *obj = object_create(motor, name, npoints, nfaces);
 	do
 	{
 		char line[120] = {0};
@@ -154,6 +156,46 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		}
 		else if (! strncmp("f", line, 1))
 		{
+			GLuint position[3] = {0};
+			GLuint uv[3] = {0};
+			GLuint normal[3] = {0};
+			GLuint format = 1;
+			int ret = 0;
+			while (ret == 0)
+			{
+				switch (format)
+				{
+				case 1:
+					ret = sscanf(line + 1, "%u %u %u",
+						&position[0], &position[1], &position[2]);
+				break;
+				case 2:
+					ret = sscanf(line + 1, "%u/%u %u/%u %u/%u",
+						&position[0], &uv[0],
+						&position[1], &uv[1],
+						&position[2], &uv[2]);
+				break;
+				case 3:
+					ret = sscanf(line + 1, "%u/%u/%u %u/%u/%u %u/%u/%u",
+						&position[0], &uv[0], &normal[0],
+						&position[1], &uv[1], &normal[1],
+						&position[2], &uv[2], &normal[2]);
+				break;
+				default:
+					ret = -1;
+				}
+				if (ret != 3 * format)
+				{
+					format++;
+					ret = 0;
+				}
+			}
+			if (ret != 3 * format)
+			{
+				err("glmotor: object vertex malformated %d", ret);
+				break;
+			}
+			object_appendface(obj, 1, position);
 		}
 	} while (ret != 0);
 	
