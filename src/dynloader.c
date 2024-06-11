@@ -83,14 +83,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		return 0;
 	}
 
-	struct Vertex_s
-	{
-		GLuint npoints;
-		GLuint valuessize;
-		GLfloat *values;
-	} vertex = {0};
-	vertex.valuessize += 60;
-	vertex.values = calloc(vertex.valuessize, sizeof(*vertex.values));
+	GLuint npoints = 0;
 	int ret = 0;
 	do
 	{
@@ -110,21 +103,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		}
 		if (! strncmp("v", line, 1))
 		{
-			vertex.npoints++;
-			if ((vertex.valuessize / 3) < vertex.npoints)
-			{
-				vertex.valuessize += 60;
-				vertex.values = realloc(vertex.values, vertex.valuessize * sizeof(*vertex.values));
-			}
-			int ret = sscanf(line + 1, "%f %f %f",
-				&vertex.values[(vertex.npoints - 1) * 3 + 0],
-				&vertex.values[(vertex.npoints - 1) * 3 + 1],
-				&vertex.values[(vertex.npoints - 1) * 3 + 2]);
-			if (ret != 3)
-			{
-				err("glmotor: object vertex malformated %d", ret);
-				break;
-			}
+			npoints++;
 		}
 		else if (! strncmp("vt", line, 2))
 		{
@@ -136,8 +115,49 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		{
 		}
 	} while (ret != 0);
+	fseek(pFile, 0, SEEK_SET);
 
-	GLMotor_Object_t *obj = object_create(motor, name, vertex.npoints, vertex.values);
+	GLMotor_Object_t *obj = object_create(motor, name, npoints, NULL);
+	do
+	{
+		char line[120] = {0};
+		ret = fread(line, sizeof(char), 120, pFile);
+		if (ret < 0)
+		{
+			err("glmotor: object file malformated %m");
+			break;
+		}
+		char *end = strchr(line, '\n');
+		if (end != NULL)
+		{
+			fseek(pFile, -ret, SEEK_CUR);
+			fseek(pFile, end - line + 1, SEEK_CUR);
+			*end = '\0';
+		}
+		if (! strncmp("v", line, 1))
+		{
+			GLfloat point[3] = {0};
+			int ret = sscanf(line + 1, "%f %f %f",
+				&point[0], &point[1], &point[2]);
+			if (ret != 3)
+			{
+				err("glmotor: object vertex malformated %d", ret);
+				break;
+			}
+			object_appendpoint(obj, 1, point);
+		}
+		else if (! strncmp("vt", line, 2))
+		{
+		}
+		else if (! strncmp("vn", line, 2))
+		{
+		}
+		else if (! strncmp("f", line, 1))
+		{
+		}
+	} while (ret != 0);
+	
+
 	fclose(pFile);
 	return obj;
 }

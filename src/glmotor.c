@@ -135,51 +135,45 @@ struct GLMotor_Object_s
 {
 	GLMotor_t *motor;
 	GLuint ID;
+	GLuint maxpoints;
 	GLuint npoints;
 	GLfloat *points;
 };
 
-GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint npoints, GLfloat *points)
+GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint maxpoints)
 {
 	GLuint objID = 0;
-#ifdef HAVE_GLESV2
-	//objID = glGetAttribLocation(motor->programID, name );
-	glBindAttribLocation(motor->programID, objID, name );
-//	glVertexAttribPointer(objID, 3, GL_FLOAT, GL_FALSE, 0, points);
-#else
 	glGenBuffers(1, &objID);
 	glBindBuffer(GL_ARRAY_BUFFER, objID);
-	glBufferData(GL_ARRAY_BUFFER, npoints * sizeof(GLfloat) * 3 /* size of buffer */, points, GL_STATIC_DRAW);
-#endif
+	glBufferData(GL_ARRAY_BUFFER, maxpoints * sizeof(GLfloat) * 3 /* size of buffer */, NULL, GL_STATIC_DRAW);
+	glBindAttribLocation(motor->programID, objID, name );
 
 	GLMotor_Object_t *obj;
 	obj = calloc(1, sizeof(*obj));
 	obj->motor = motor;
 	obj->ID = objID;
-	obj->npoints = npoints;
-	obj->points = points;
+	obj->maxpoints = maxpoints;
 
 	return obj;
+}
+
+GLMOTOR_EXPORT GLuint object_appendpoint(GLMotor_Object_t *obj, GLuint npoints, GLfloat points[])
+{
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID);
+	glBufferSubData(GL_ARRAY_BUFFER, obj->npoints * sizeof(GLfloat) * 3, npoints * sizeof(GLfloat) * 3, points);
+	obj->npoints += npoints;
+	return 0;
 }
 
 GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 {
 	GLMotor_t *motor = obj->motor;
-#ifdef HAVE_GLESV2
-	//glVertexAttribPointer(obj->ID, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat)/* stride between elements */, obj->points);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, obj->points);
-	glEnableVertexAttribArray(0);
-
-	glDrawArrays(GL_TRIANGLES, 0 /* first points inside points */, obj->npoints);
-	glDisableVertexAttribArray(obj->ID);
-#else
-	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID);
+	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, obj->npoints);
 	glDisableVertexAttribArray(obj->ID);
-#endif
 	return 0;
 }
 
