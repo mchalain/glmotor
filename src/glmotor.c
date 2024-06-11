@@ -140,15 +140,33 @@ struct GLMotor_Object_s
 	GLuint maxfaces;
 	GLuint npoints;
 	GLuint nfaces;
+
+	GLintptr offsetcolors;
+	GLintptr offsetuvs;
+	GLintptr offsetnormals;
+	GLuint ncolors;
+	GLuint nuvs;
+	GLuint nnormals;
 };
 
-GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint maxpoints,
-		GLuint maxfaces)
+GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint maxpoints, GLuint maxfaces)
 {
 	GLuint objID[2] = {0};
 	glGenBuffers(2, objID);
 	glBindBuffer(GL_ARRAY_BUFFER, objID[0]);
 	GLsizeiptr size = maxpoints * sizeof(GLfloat) * 3;
+	GLintptr offsetcolors = 0;
+	GLintptr offsetuvs = 0;
+	GLintptr offsetnormals = 0;
+	offsetcolors = size;
+	size += maxpoints * sizeof(GLfloat) * 4;
+#if 0
+	offsetuvs = size;
+	size += maxpoints * sizeof(GLfloat) * 2;
+	offsetnormals = size;
+	size += maxpoints * sizeof(GLfloat) * 3;
+#endif
+
 	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
 
 	if (maxfaces)
@@ -168,6 +186,10 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, G
 	obj->ID[1] = objID[1];
 	obj->maxpoints = maxpoints;
 	obj->maxfaces = maxfaces;
+
+	obj->offsetcolors = offsetcolors;
+	obj->offsetuvs = offsetuvs;
+	obj->offsetnormals = offsetnormals;
 
 	return obj;
 }
@@ -192,12 +214,57 @@ GLMOTOR_EXPORT GLuint object_appendface(GLMotor_Object_t *obj, GLuint nfaces, GL
 	return 0;
 }
 
+GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, GLfloat colors[])
+{
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
+	GLuint offset = obj->offsetcolors;
+	offset += obj->ncolors * sizeof(GLfloat) * 4;
+	glBufferSubData(GL_ARRAY_BUFFER, offset, ncolors * sizeof(GLfloat) * 4, colors);
+	obj->ncolors += ncolors;
+	return 0;
+}
+
+GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloat uvs[])
+{
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
+	GLuint offset = obj->offsetuvs;
+	offset += obj->nuvs * sizeof(GLfloat) * 2;
+	glBufferSubData(GL_ARRAY_BUFFER, offset, nuvs * sizeof(GLfloat) * 2, uvs);
+	obj->nuvs += nuvs;
+	return 0;
+}
+
+GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals, GLfloat normals[])
+{
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
+	GLuint offset = obj->offsetnormals;
+	offset += obj->nnormals * sizeof(GLfloat) * 3;
+	glBufferSubData(GL_ARRAY_BUFFER, offset, nnormals * sizeof(GLfloat) * 2, normals);
+	obj->nnormals += nnormals;
+	return 0;
+}
+
 GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 {
 	GLMotor_t *motor = obj->motor;
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	if (obj->ncolors)
+	{
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, obj->offsetcolors, (void*)0);
+	}
+	if (obj->nuvs)
+	{
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, obj->offsetuvs, (void*)0);
+	}
+	if (obj->nnormals)
+	{
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, obj->offsetnormals, (void*)0);
+	}
 	if (obj->nfaces)
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
