@@ -369,6 +369,8 @@ GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene)
 	{
 		destroy_object(it->entity);
 		free(it);
+		if (! next)
+			break;
 	}
 	free(scene);
 }
