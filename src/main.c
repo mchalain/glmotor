@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 		 1.0f, 0.0f, 0.0f, 1.0f, // A
 #endif
 	};
-	GLuint ncolors = sizeof(vColors) / sizeof(GLfloat) / 4;
+	GLuint ncolors = sizeof(vColors) / sizeof(GLfloat) / COLOR_COMPONENTS;
 #ifdef STATIC_FACE
 	GLuint vFaces[] = {
 		0, 1, 2,

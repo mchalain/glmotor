@@ -161,7 +161,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, G
 	GLintptr offsetuvs = 0;
 	GLintptr offsetnormals = 0;
 	offsetcolors = size;
-	size += maxpoints * sizeof(GLfloat) * 4;
+	size += maxpoints * sizeof(GLfloat) * COLOR_COMPONENTS;
 #if 0
 	offsetuvs = size;
 	size += maxpoints * sizeof(GLfloat) * 2;
@@ -220,8 +220,8 @@ GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, 
 {
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
 	GLuint offset = obj->offsetcolors;
-	offset += obj->ncolors * sizeof(GLfloat) * 4;
-	glBufferSubData(GL_ARRAY_BUFFER, offset, ncolors * sizeof(GLfloat) * 4, colors);
+	offset += obj->ncolors * sizeof(GLfloat) * COLOR_COMPONENTS;
+	glBufferSubData(GL_ARRAY_BUFFER, offset, ncolors * sizeof(GLfloat) * COLOR_COMPONENTS, colors);
 	obj->ncolors += ncolors;
 	if (obj->ncolors == 1)
 		memcpy(obj->color, colors, ncolors * sizeof(GLfloat) * 4);
@@ -261,7 +261,7 @@ GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 	else if (obj->ncolors)
 	{
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, obj->offsetcolors, (void*)0);
+		glVertexAttribPointer(1, COLOR_COMPONENTS, GL_FLOAT, GL_FALSE, obj->offsetcolors, (void*)0);
 	}
 	if (obj->nuvs)
 	{
