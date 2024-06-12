@@ -1,5 +1,6 @@
 GLUT=n
 GLFW=n
 EGL=y
+EGL_JPEG=n
 GLESV2=y
 GLEW=n

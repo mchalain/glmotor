@@ -34,8 +34,6 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 
 	EGLNativeWindowType native_win;
 	native_win = native_createwindow(width, height, name);
-	if (native_win == 0)
-		return NULL;
 
 	EGLint majorVersion;
 	EGLint minorVersion;
@@ -63,8 +61,22 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	eglChooseConfig(egl_display, attributes, &config, 1, &num_config);
 
 	GLMotor_Surface_t *window = calloc(1, sizeof(*window));
-	window->native_win = native_win;
-	window->egl_surface = eglCreateWindowSurface(egl_display, config, native_win, NULL);
+	if (native_win)
+	{
+		window->native_win = native_win;
+		window->egl_surface = eglCreateWindowSurface(egl_display, config, native_win, NULL);
+	}
+	else
+	{
+		static EGLint pbufferAttribs[] = {
+			EGL_WIDTH,	600,
+			EGL_HEIGHT, 800,
+			EGL_NONE,
+		};
+		pbufferAttribs[1] = width;
+		pbufferAttribs[3] = height;
+		window->egl_surface = eglCreatePbufferSurface(egl_display, config, pbufferAttribs);
+	}
 	EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
 	window->egl_context = eglCreateContext(egl_display, config, EGL_NO_CONTEXT, contextAttribs);
 
