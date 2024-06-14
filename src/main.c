@@ -74,47 +74,22 @@ int main(int argc, char** argv)
 	GLMotor_Object_t *obj = NULL;
 #ifdef OBJECT_STATIC
 	GLfloat vVertices[] = {
-		 0.0f,  0.5f, -0.5f, // A
-		-0.5f, -0.5f, -0.5f, // B
-		 0.5f, -0.5f, -0.5f, // C
+		 0.000f,  0.500f, -0.250f, // A
+		-0.433f, -0.250f, -0.250f, // B
+		 0.433f, -0.250f, -0.250f, // C
 
-		 0.0f,  0.0f,  0.5f, // D
-#ifndef STATIC_FACE
-		 0.0f,  0.5f, -0.5f, // A
-		-0.5f, -0.5f, -0.5f, // B
-
-		 0.0f,  0.0f,  0.5f, // D
-		-0.5f, -0.5f, -0.5f, // B
-		 0.0f, -0.5f, -0.5f, // C
-
-		 0.0f,  0.0f,  0.5f, // D
-		 0.0f, -0.5f, -0.5f, // C
-		 0.0f,  0.5f, -0.5f, // A
-#endif
+		 0.000f,  0.000f,  0.500f, // D
 	};
 	GLuint size = sizeof(vVertices) / sizeof(GLfloat) / 3;
 	GLfloat vColors[] = {
 
-		 1.0f, 0.0f, 0.0f, 1.0f, // A
-		 0.0f, 1.0f, 0.0f, 1.0f, // B
-		 0.0f, 0.0f, 1.0f, 1.0f, // C
+		 1.0f, 0.0f, 0.0f, //1.0f, // A
+		 0.0f, 1.0f, 0.0f, //1.0f, // B
+		 0.0f, 0.0f, 1.0f, //1.0f, // C
 
-		 1.0f, 0.0f, 1.0f, 1.0f, // D
-#ifndef STATIC_FACE
-		 1.0f, 0.0f, 0.0f, 1.0f, // A
-		 0.0f, 1.0f, 0.0f, 1.0f, // B
-
-		 1.0f, 0.0f, 1.0f, 1.0f, // D
-		 0.0f, 1.0f, 0.0f, 1.0f, // B
-		 0.0f, 0.0f, 1.0f, 1.0f, // C
-
-		 1.0f, 0.0f, 1.0f, 1.0f, // D
-		 0.0f, 0.0f, 1.0f, 1.0f, // C
-		 1.0f, 0.0f, 0.0f, 1.0f, // A
-#endif
+		 0.0f, 0.0f, 0.0f, //1.0f, // D
 	};
 	GLuint ncolors = sizeof(vColors) / sizeof(GLfloat) / COLOR_COMPONENTS;
-#ifdef STATIC_FACE
 	GLuint vFaces[] = {
 		0, 1, 2,
 		0, 2, 3,
@@ -122,9 +97,6 @@ int main(int argc, char** argv)
 		1, 2, 3,
 	};
 	GLuint nfaces = sizeof(vFaces) / sizeof(GLuint) / 3;
-#else
-	GLuint nfaces = 0;
-#endif
 
 	obj = object_create(motor, "vPosition", size, nfaces);
 	object_appendpoint(obj, size, &vVertices[0]);
@@ -140,7 +112,6 @@ int main(int argc, char** argv)
 	{
 		scene_appendobject(scene, obj);
 	}
-
 	glmotor_run(motor, render, scene);
 	scene_destroy(scene);
 	glmotor_destroy(motor);
