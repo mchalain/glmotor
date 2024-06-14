@@ -9,7 +9,9 @@
 #else
 # include <GL/glew.h>
 #endif
+#ifdef HAVE_GLU
 #include <GL/glu.h>
+#endif
 
 #include "glmotor.h"
 #include "log.h"
@@ -403,10 +405,12 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
 
-#if HAVE_GLEW
+#ifdef HAVE_GLEW
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+#ifdef HAVE_GLU
 	gluPerspective(atan(tan(50.0 * 3.14159 / 360.0) / 1.0) * 360.0 / 3.141593, (GLfloat)motor->width / (GLfloat)motor->height, 0.1, 100.0);
+#endif
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 #endif
@@ -426,9 +430,11 @@ GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *came
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 #endif
+#ifdef HAVE_GLU
 	gluLookAt(camera[0], camera[1], camera[2],
 			applyTarget[0], applyTarget[1], applyTarget[2],
 			0, 1, 0);
+#endif
 }
 
 GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t *obj)
