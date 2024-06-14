@@ -20,6 +20,14 @@ static void render(void *data)
 	g_angle += M_2_PI / 100;
 	scene_movecamera(scene, g_camera, NULL);
 #endif
+	GLMotor_Object_t *obj = scene_getobject(scene, "vPosition");
+	GLMotor_RotAxis_t rotate = { .X = 0, .Y = 0, .Z = 1, .A = M_PI_4/100 };
+	GLfloat translate[3] = {0.01, 0.01, 0};
+	GLfloat *tr = NULL;
+	//tr = translate;
+	GLMotor_RotAxis_t *rot = NULL;
+	rot = &rotate;
+	object_move(obj, tr, rot);
 
 	scene_draw(scene);
 }

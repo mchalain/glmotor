@@ -138,6 +138,7 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 struct GLMotor_Object_s
 {
 	GLMotor_t *motor;
+	char *name;
 	GLuint ID[2];
 	GLuint maxpoints;
 	GLuint maxfaces;
@@ -186,6 +187,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, G
 
 	GLMotor_Object_t *obj;
 	obj = calloc(1, sizeof(*obj));
+	obj->name = strdup(name);
 	obj->motor = motor;
 	obj->ID[0] = objID[0];
 	obj->ID[1] = objID[1];
@@ -382,6 +384,7 @@ GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 GLMOTOR_EXPORT void destroy_object(GLMotor_Object_t *obj)
 {
 	glDeleteBuffers(2, obj->ID);
+	free(obj->name);
 	free(obj);
 }
 
@@ -443,6 +446,21 @@ GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t 
 	entry->entity = obj;
 	entry->next = scene->objects;
 	scene->objects = entry;
+}
+
+GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const char *name)
+{
+	GLMotor_Object_t *obj = NULL;
+	for (GLMotor_list_t *entry = scene->objects; entry != NULL; entry = entry->next)
+	{
+		if (!strcmp(((GLMotor_Object_t *)entry->entity)->name, name))
+		{
+			obj = entry->entity;
+			break;
+		}
+	}
+	return obj;
+	
 }
 
 GLMOTOR_EXPORT void scene_draw(GLMotor_Scene_t *scene)
