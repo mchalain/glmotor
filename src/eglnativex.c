@@ -50,17 +50,9 @@ GLboolean native_running(EGLNativeWindowType native_win)
 	return running;
 }
 
-EGLNativeWindowType native_createwindow(GLuint width, GLuint height, const GLchar *name)
+EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint width, GLuint height, const GLchar *name)
 {
 	
-	if (display == NULL)
-		/** environment management */
-		display = XOpenDisplay(NULL);
-	if (display == NULL)
-	{
-		err("glmotor: wayland connection error %m");
-		return 0;
-	}
 	Window root = DefaultRootWindow(display);
 
 	XSetWindowAttributes swa;

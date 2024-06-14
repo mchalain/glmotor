@@ -57,7 +57,7 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	egl_display = eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR, display, NULL);
 #endif
 	EGLNativeWindowType native_win;
-	native_win = native_createwindow(width, height, name);
+	native_win = native_createwindow(display, width, height, name);
 
 	EGLint majorVersion;
 	EGLint minorVersion;

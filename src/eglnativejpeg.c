@@ -59,10 +59,14 @@ GLboolean native_running(EGLNativeWindowType native_win)
 	return 0;
 }
 
-EGLNativeWindowType native_createwindow(GLuint width, GLuint height, const GLchar *name)
+EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint width, GLuint height, const GLchar *name)
 {
 	g_width = width;
 	g_height = height;
 	
 	return (EGLNativeWindowType) NULL;
+}
+
+void native_destroy(EGLNativeDisplayType native_display)
+{
 }

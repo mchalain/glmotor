@@ -162,7 +162,7 @@ static void shell_surface_popup_done (void *data, struct wl_shell_surface *shell
 }
 static struct wl_shell_surface_listener shell_surface_listener = {&shell_surface_ping, &shell_surface_configure, &shell_surface_popup_done};
 
-EGLNativeWindowType native_createwindow(GLuint width, GLuint height, const GLchar *name);
+EGLNativeWindowType native_createwindow(EGLNativeDisplayType dislay, GLuint width, GLuint height, const GLchar *name);
 {
 	/** environment management */
 	display = wl_display_connect(NULL);
