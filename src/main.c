@@ -39,9 +39,10 @@ int main(int argc, char** argv)
 	const char *fragmentshader = "data/simple.frag";
 	const char *object = "data/cube.obj";
 	int opt;
+	opterr = 0;
 	do
 	{
-		opt = getopt(argc, argv, "o:v:f:");
+		opt = getopt(argc, argv, "-o:v:f:");
 		switch (opt)
 		{
 			case 'o':

@@ -30,8 +30,32 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	GLuint height = 480;
 	GLchar *name = "GLMotor";
 
-	egl_display = eglGetDisplay(native_display());
+	int opt;
+	optind = 1;
+	do
+	{
+		opt = getopt(argc, argv, "w:h:n:");
+		switch (opt)
+		{
+			case 'w':
+				width = atoi(optarg);
+			break;
+			case 'h':
+				height = atoi(optarg);
+			break;
+			case 'n':
+				name = optarg;
+			break;
+		}
+	} while (opt != -1);
 
+	EGLNativeDisplayType display = native_display();
+#if 1
+	egl_display = eglGetDisplay(display);
+#else
+	PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = eglGetProcAddress("eglGetPlatformDisplayEXT");
+	egl_display = eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR, display, NULL);
+#endif
 	EGLNativeWindowType native_win;
 	native_win = native_createwindow(width, height, name);
 

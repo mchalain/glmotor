@@ -53,6 +53,25 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	GLuint height = 480;
 	GLchar *name = "GLMotor";
 
+	int opt;
+	optind = 1;
+	do
+	{
+		opt = getopt(argc, argv, "w:h:n:");
+		switch (opt)
+		{
+			case 'w':
+				width = atoi(optarg);
+			break;
+			case 'h':
+				height = atoi(optarg);
+			break;
+			case 'n':
+				name = optarg;
+			break;
+		}
+	} while (opt != -1);
+
 	if (!glfwInit())
 	{
 		err("glmotor: Window manager error");
