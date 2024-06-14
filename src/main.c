@@ -20,7 +20,7 @@ static void render(void *data)
 	g_angle += M_2_PI / 100;
 	scene_movecamera(scene, g_camera, NULL);
 #endif
-	GLMotor_Object_t *obj = scene_getobject(scene, "vPosition");
+	GLMotor_Object_t *obj = scene_getobject(scene, "object");
 	GLMotor_RotAxis_t rotate = { .X = 0, .Y = 0, .Z = 1, .A = M_PI_4/100 };
 	GLfloat translate[3] = {0.01, 0.01, 0};
 	GLfloat *tr = NULL;
@@ -98,7 +98,7 @@ int main(int argc, char** argv)
 	};
 	GLuint nfaces = sizeof(vFaces) / sizeof(GLuint) / 3;
 
-	obj = object_create(motor, "vPosition", size, nfaces);
+	obj = object_create(motor, "object", size, nfaces);
 	object_appendpoint(obj, size, &vVertices[0]);
 	object_appendcolor(obj, ncolors, &vColors[0]);
 
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 	object_appendface(obj, nfaces, &vFaces[0]);
 #endif
 #else
-	obj = object_load(motor, "vPosition", object);
+	obj = object_load(motor, "object", object);
 #endif
 	if (obj != NULL)
 	{

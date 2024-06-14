@@ -180,10 +180,10 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, G
 		GLsizeiptr size = maxfaces * sizeof(GLuint) * 3;
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objID[1]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
-		glBindAttribLocation(motor->programID, objID[1], name );
+		glBindAttribLocation(motor->programID, objID[1], "vPosition" );
 	}
 	else
-		glBindAttribLocation(motor->programID, objID[0], name );
+		glBindAttribLocation(motor->programID, objID[0], "vPosition" );
 
 	GLMotor_Object_t *obj;
 	obj = calloc(1, sizeof(*obj));
