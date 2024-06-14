@@ -142,6 +142,7 @@ struct GLMotor_Object_s
 	GLuint npoints;
 	GLuint nfaces;
 
+	GLfloat move[16];
 	GLfloat color[4];
 	GLintptr offsetcolors;
 	GLintptr offsetuvs;
@@ -189,6 +190,10 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, G
 	obj->maxpoints = maxpoints;
 	obj->maxfaces = maxfaces;
 
+	obj->move[ 0] =
+	 obj->move[ 5] =
+	 obj->move[10] =
+	 obj->move[15] = 1;
 	obj->offsetcolors = offsetcolors;
 	obj->offsetuvs = offsetuvs;
 	obj->offsetnormals = offsetnormals;
@@ -228,6 +233,87 @@ GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, 
 	return 0;
 }
 
+static void mat4_multiply4(GLfloat A[], GLfloat B[], GLfloat AB[])
+{
+	GLfloat TMP[16];
+	// line 1
+	TMP[ 0] = A[ 0] * B[ 0] + A[ 1] * B[ 4] + A[ 2] * B[ 8] + A[ 3] * B[12];
+	TMP[ 1] = A[ 0] * B[ 1] + A[ 1] * B[ 5] + A[ 2] * B[ 9] + A[ 3] * B[13];
+	TMP[ 2] = A[ 0] * B[ 2] + A[ 1] * B[ 6] + A[ 2] * B[10] + A[ 3] * B[14];
+	TMP[ 3] = A[ 0] * B[ 3] + A[ 1] * B[ 7] + A[ 2] * B[11] + A[ 3] * B[15];
+	// line 2
+	TMP[ 4] = A[ 4] * B[ 0] + A[ 5] * B[ 4] + A[ 6] * B[ 8] + A[ 7] * B[12];
+	TMP[ 5] = A[ 4] * B[ 1] + A[ 5] * B[ 5] + A[ 6] * B[ 9] + A[ 7] * B[13];
+	TMP[ 6] = A[ 4] * B[ 2] + A[ 5] * B[ 6] + A[ 6] * B[10] + A[ 7] * B[14];
+	TMP[ 7] = A[ 4] * B[ 3] + A[ 5] * B[ 7] + A[ 6] * B[11] + A[ 7] * B[15];
+	// line 3
+	TMP[ 8] = A[ 8] * B[ 0] + A[ 9] * B[ 4] + A[10] * B[ 8] + A[11] * B[12];
+	TMP[ 9] = A[ 8] * B[ 1] + A[ 9] * B[ 5] + A[10] * B[ 9] + A[11] * B[13];
+	TMP[10] = A[ 8] * B[ 2] + A[ 9] * B[ 6] + A[10] * B[10] + A[11] * B[14];
+	TMP[11] = A[ 8] * B[ 3] + A[ 9] * B[ 7] + A[10] * B[11] + A[11] * B[15];
+	// line 4
+	TMP[12] = A[12] * B[ 0] + A[13] * B[ 4] + A[14] * B[ 8] + A[15] * B[12];
+	TMP[13] = A[12] * B[ 1] + A[13] * B[ 5] + A[14] * B[ 9] + A[15] * B[13];
+	TMP[14] = A[12] * B[ 2] + A[13] * B[ 6] + A[14] * B[10] + A[15] * B[14];
+	TMP[15] = A[12] * B[ 3] + A[13] * B[ 7] + A[14] * B[11] + A[15] * B[15];
+
+	memcpy(AB, TMP, sizeof(TMP));
+}
+static void mat4_log(GLfloat mat[])
+{
+	for (int i = 0; i < 4; i++)
+	{
+		printf("% 0.3f % 0.3f % 0.3f % 0.3f\n",
+			mat[0 + i * 4],
+			mat[1 + i * 4],
+			mat[2 + i * 4],
+			mat[3 + i * 4]
+		);
+	}
+}
+
+GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra)
+{
+	if (ra)
+	{
+		GLfloat sin_a = sin(ra->A / 2);
+		GLfloat cos_a = cos(ra->A / 2);
+		GLfloat xx = (ra->X  * sin_a) * (ra->X  * sin_a);
+		GLfloat xy = (ra->X  * sin_a) * (ra->Y  * sin_a);
+		GLfloat xz = (ra->X  * sin_a) * (ra->Z  * sin_a);
+		GLfloat xw = (ra->X  * sin_a) * (cos_a);
+		GLfloat yy = (ra->Y  * sin_a) * (ra->Y  * sin_a);
+		GLfloat yz = (ra->Y  * sin_a) * (ra->Z  * sin_a);
+		GLfloat yw = (ra->Y  * sin_a) * (cos_a);
+		GLfloat zz = (ra->Z  * sin_a) * (ra->Z  * sin_a);
+		GLfloat zw = (ra->Z  * sin_a) * (cos_a);
+
+		GLfloat mq[16];
+		mq[0]  = 1 - 2 * ( yy + zz );
+		mq[1]  =     2 * ( xy - zw );
+		mq[2]  =     2 * ( xz + yw );
+
+		mq[4]  =     2 * ( xy + zw );
+		mq[5]  = 1 - 2 * ( xx + zz );
+		mq[6]  =     2 * ( yz - xw );
+
+		mq[8]  =     2 * ( xz - yw );
+		mq[9]  =     2 * ( yz + xw );
+		mq[10] = 1 - 2 * ( xx + yy );
+
+		mq[3]  = mq[7] = mq[11] = mq[12] = mq[13] = mq[14] = 0;
+		mq[15] = 1;
+
+		mat4_multiply4(mq, obj->move, obj->move);
+	}
+	if (translate)
+	{
+		obj->move[ 3] += translate[0];
+		obj->move[ 7] += translate[1];
+		obj->move[11] += translate[2];
+	}
+}
+
 GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloat uvs[])
 {
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
@@ -254,9 +340,11 @@ GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	GLuint moveID = glGetUniformLocation(motor->programID, "vMove");
+	glUniformMatrix4fv(moveID, 1, GL_FALSE, obj->move);
 	if (obj->ncolors == 1)
 	{
-		glVertexAttrib4fv ( 1, obj->color );
+		glVertexAttrib4fv(1, obj->color);
 	}
 	else if (obj->ncolors)
 	{

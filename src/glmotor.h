@@ -20,6 +20,15 @@ struct GLMotor_s
 	GLuint height;
 };
 
+typedef struct GLMotor_RotAxis_s GLMotor_RotAxis_t;
+struct GLMotor_RotAxis_s
+{
+	GLfloat A;
+	GLfloat X;
+	GLfloat Y;
+	GLfloat Z;
+};
+
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv);
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertex, GLuint vertexSize, GLchar *fragment, GLuint fragmentSize);
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata);
@@ -33,6 +42,7 @@ GLMOTOR_EXPORT GLuint object_appendface(GLMotor_Object_t *obj, GLuint nfaces, GL
 GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, GLfloat colors[]);
 GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloat uvs[]);
 GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals, GLfloat normals[]);
+GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra);
 GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT GLuint object_destroy(GLMotor_Object_t *obj);
 
