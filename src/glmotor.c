@@ -381,7 +381,7 @@ GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
    	return 0;
 }
 
-GLMOTOR_EXPORT void destroy_object(GLMotor_Object_t *obj)
+GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj)
 {
 	glDeleteBuffers(2, obj->ID);
 	free(obj->name);
@@ -479,7 +479,7 @@ GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene)
 {
 	for (GLMotor_list_t *it = scene->objects, *next = it->next; it != NULL; it = next, next = it->next)
 	{
-		destroy_object(it->entity);
+		object_destroy(it->entity);
 		free(it);
 		if (! next)
 			break;

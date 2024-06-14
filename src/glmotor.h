@@ -44,7 +44,7 @@ GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloa
 GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals, GLfloat normals[]);
 GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra);
 GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj);
-GLMOTOR_EXPORT GLuint object_destroy(GLMotor_Object_t *obj);
+GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj);
 
 typedef struct GLMotor_Texture_s GLMotor_Texture_t;
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, GLchar *map);
