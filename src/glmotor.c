@@ -155,7 +155,7 @@ struct GLMotor_Object_s
 	GLuint nnormals;
 };
 
-GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, GLchar *name, GLuint maxpoints, GLuint maxfaces)
+GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *name, GLuint maxpoints, GLuint maxfaces)
 {
 	GLuint objID[2] = {0};
 	glGenBuffers(2, objID);
