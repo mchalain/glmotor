@@ -12,6 +12,7 @@
 #define GLMOTOR_SURFACE_S struct GLMotor_Surface_s
 #include "glmotor.h"
 #include "log.h"
+#include "eglnative.h"
 
 static struct wl_display *display;
 static struct wl_compositor *compositor = NULL;
@@ -162,7 +163,7 @@ static void shell_surface_popup_done (void *data, struct wl_shell_surface *shell
 }
 static struct wl_shell_surface_listener shell_surface_listener = {&shell_surface_ping, &shell_surface_configure, &shell_surface_popup_done};
 
-EGLNativeWindowType native_createwindow(EGLNativeDisplayType dislay, GLuint width, GLuint height, const GLchar *name);
+static EGLNativeWindowType native_createwindow(EGLNativeDisplayType dislay, GLuint width, GLuint height, const GLchar *name);
 {
 	/** environment management */
 	display = wl_display_connect(NULL);
@@ -207,7 +208,7 @@ EGLNativeWindowType native_createwindow(EGLNativeDisplayType dislay, GLuint widt
 	return window->egl_window;
 }
 
-EGLNativeDisplayType native_display()
+static EGLNativeDisplayType native_display()
 {
 	if (display == NULL)
 		/** environment management */
@@ -215,14 +216,14 @@ EGLNativeDisplayType native_display()
 	return (EGLNativeDisplayType)display;
 }
 
-GLboolean native_running(EGLNativeWindowType native_win)
+static GLboolean native_running(EGLNativeWindowType native_win)
 {
 	struct wl_egl_window *egl_window = (struct wl_egl_window *native_win);
 	wl_display_dispatch_pending(display);
 	return runnning;
 }
 
-void native_destroy(EGLNativeDisplayType native_display)
+static void native_destroy(EGLNativeDisplayType native_display)
 {
 	struct wl_display *display = (struct wl_display *)native_display;
 	wl_egl_window_destroy(window->egl_window);
@@ -230,3 +231,12 @@ void native_destroy(EGLNativeDisplayType native_display)
 	wl_surface_destroy(window->surface);
 	wl_display_disconnect(display);
 }
+
+struct eglnative_motor_s *eglnative_wl = &(struct eglnative_motor_s)
+{
+	.name = "wl",
+	.display = native_display,
+	.createwindow = native_createwindow,
+	.running = native_running,
+	.destroy = native_destroy,
+};

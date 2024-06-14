@@ -9,14 +9,12 @@ glmotor_LIBRARY-$(GLFW)+=glfw3
 glmotor_SOURCES-$(HAVE_EGL)+=surfaceegl.c
 glmotor_LIBRARY-$(EGL)+=egl
 glmotor_SOURCES-$(HAVE_LIBJPEG)+=eglnativejpeg.c
-glmotor_LIBRARY-$(EGL_JPEG)+=libjpeg
-ifneq ($(findstring y,$(EGL_JPEG)$(HAVE_LIBJPEG)),y)
 glmotor_SOURCES-$(HAVE_WAYLAND_EGL)+=eglnativewl.c
 glmotor_LIBRARY-$(HAVE_WAYLAND_EGL)+=xkbcommon
 glmotor_SOURCES-$(HAVE_X11)+=eglnativex.c
-endif
 glmotor_LIBRARY-$(EGL)+=wayland-egl
 glmotor_LIBRARY-$(EGL)+=x11
+glmotor_LIBRARY-$(EGL)+=libjpeg
 glmotor_LIBRARY-$(GLEW)+=glew
 glmotor_LIBRARY-$(GLESV2)+=glesv2
 glmotor_LIBRARY-$(GLESV2:n=y)+=gl

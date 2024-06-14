@@ -9,16 +9,17 @@
 
 #include "log.h"
 #include "glmotor.h"
+#include "eglnative.h"
 
 static GLuint g_width;
 static GLuint g_height;
 
-EGLNativeDisplayType native_display()
+static EGLNativeDisplayType native_display()
 {
 	return (EGLNativeDisplayType)EGL_DEFAULT_DISPLAY;
 }
 
-GLboolean native_running(EGLNativeWindowType native_win)
+static GLboolean native_running(EGLNativeWindowType native_win)
 {
 	unsigned char *buffer =
 		(unsigned char *)malloc(g_width * g_height * COLOR_COMPONENTS);
@@ -59,7 +60,7 @@ GLboolean native_running(EGLNativeWindowType native_win)
 	return 0;
 }
 
-EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint width, GLuint height, const GLchar *name)
+static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint width, GLuint height, const GLchar *name)
 {
 	g_width = width;
 	g_height = height;
@@ -67,6 +68,15 @@ EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint wid
 	return (EGLNativeWindowType) NULL;
 }
 
-void native_destroy(EGLNativeDisplayType native_display)
+static void native_destroy(EGLNativeDisplayType native_display)
 {
 }
+
+struct eglnative_motor_s *eglnative_jpeg = &(struct eglnative_motor_s)
+{
+	.name = "jpeg",
+	.display = native_display,
+	.createwindow = native_createwindow,
+	.running = native_running,
+	.destroy = native_destroy,
+};

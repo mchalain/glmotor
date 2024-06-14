@@ -3,6 +3,7 @@
 #include <EGL/egl.h>
 
 #include "log.h"
+#include "eglnative.h"
 
 #include  <X11/Xlib.h>
 #include  <X11/Xatom.h>
@@ -16,7 +17,7 @@
 // X11 related local variables
 static Display *display = NULL;
 
-EGLNativeDisplayType native_display()
+static EGLNativeDisplayType native_display()
 {
 	if (display == NULL)
 		/** environment management */
@@ -24,7 +25,7 @@ EGLNativeDisplayType native_display()
 	return (EGLNativeDisplayType)display;
 }
 
-GLboolean native_running(EGLNativeWindowType native_win)
+static GLboolean native_running(EGLNativeWindowType native_win)
 {
 	XEvent xev;
 	KeySym key;
@@ -50,7 +51,7 @@ GLboolean native_running(EGLNativeWindowType native_win)
 	return running;
 }
 
-EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint width, GLuint height, const GLchar *name)
+static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint width, GLuint height, const GLchar *name)
 {
 	
 	Window root = DefaultRootWindow(display);
@@ -93,6 +94,15 @@ EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint wid
 	return (EGLNativeWindowType) win;
 }
 
-void native_destroy(EGLNativeDisplayType native_display)
+static void native_destroy(EGLNativeDisplayType native_display)
 {
 }
+
+struct eglnative_motor_s *eglnative_x = &(struct eglnative_motor_s)
+{
+	.name = "x",
+	.display = native_display,
+	.createwindow = native_createwindow,
+	.running = native_running,
+	.destroy = native_destroy,
+};

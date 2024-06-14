@@ -3,10 +3,19 @@
 
 #include <EGL/egl.h>
 
-EGLNativeDisplayType native_display();
-EGLNativeWindowType native_createwindow(EGLNativeDisplayType native_display,
+struct eglnative_motor_s
+{
+	const char *name;
+	EGLNativeDisplayType (*display)();
+	EGLNativeWindowType (*createwindow)(EGLNativeDisplayType native_display,
 							GLuint width, GLuint height, const GLchar *name);
-GLboolean native_running(EGLNativeWindowType native_win);
-void native_destroy(EGLNativeDisplayType native_display);
+	GLboolean (*running)(EGLNativeWindowType native_win);
+	void (*destroy)(EGLNativeDisplayType native_display);
+};
+
+extern struct eglnative_motor_s *eglnative_drm;
+extern struct eglnative_motor_s *eglnative_jpeg;
+extern struct eglnative_motor_s *eglnative_wl;
+extern struct eglnative_motor_s *eglnative_x;
 
 #endif
