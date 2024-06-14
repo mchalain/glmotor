@@ -32,12 +32,48 @@ static void render(void *data)
 	scene_draw(scene);
 }
 
+GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name)
+{
+	GLMotor_Object_t *obj = NULL;
+	GLfloat vVertices[] = {
+		 0.000f,  0.500f, -0.250f, // A
+		-0.433f, -0.250f, -0.250f, // B
+		 0.433f, -0.250f, -0.250f, // C
+
+		 0.000f,  0.000f,  0.500f, // D
+	};
+	GLuint size = sizeof(vVertices) / sizeof(GLfloat) / 3;
+	GLfloat vColors[] = {
+
+		 1.0f, 0.0f, 0.0f, //1.0f, // A
+		 0.0f, 1.0f, 0.0f, //1.0f, // B
+		 0.0f, 0.0f, 1.0f, //1.0f, // C
+
+		 0.0f, 0.0f, 0.0f, //1.0f, // D
+	};
+	GLuint ncolors = sizeof(vColors) / sizeof(GLfloat) / COLOR_COMPONENTS;
+	GLuint vFaces[] = {
+		0, 1, 2,
+		0, 2, 3,
+		0, 1, 3,
+		1, 2, 3,
+	};
+	GLuint nfaces = sizeof(vFaces) / sizeof(GLuint) / 3;
+
+	obj = object_create(motor, name, size, nfaces);
+	object_appendpoint(obj, size, &vVertices[0]);
+	object_appendcolor(obj, ncolors, &vColors[0]);
+
+	object_appendface(obj, nfaces, &vFaces[0]);
+	return obj;
+}
+
 int main(int argc, char** argv)
 {
 
 	const char *vertexshader = "data/simple.vert";
 	const char *fragmentshader = "data/simple.frag";
-	const char *object = "data/cube.obj";
+	const char *object = NULL;
 	int opt;
 	opterr = 0;
 	do
@@ -72,42 +108,10 @@ int main(int argc, char** argv)
 #endif
 
 	GLMotor_Object_t *obj = NULL;
-#ifdef OBJECT_STATIC
-	GLfloat vVertices[] = {
-		 0.000f,  0.500f, -0.250f, // A
-		-0.433f, -0.250f, -0.250f, // B
-		 0.433f, -0.250f, -0.250f, // C
-
-		 0.000f,  0.000f,  0.500f, // D
-	};
-	GLuint size = sizeof(vVertices) / sizeof(GLfloat) / 3;
-	GLfloat vColors[] = {
-
-		 1.0f, 0.0f, 0.0f, //1.0f, // A
-		 0.0f, 1.0f, 0.0f, //1.0f, // B
-		 0.0f, 0.0f, 1.0f, //1.0f, // C
-
-		 0.0f, 0.0f, 0.0f, //1.0f, // D
-	};
-	GLuint ncolors = sizeof(vColors) / sizeof(GLfloat) / COLOR_COMPONENTS;
-	GLuint vFaces[] = {
-		0, 1, 2,
-		0, 2, 3,
-		0, 1, 3,
-		1, 2, 3,
-	};
-	GLuint nfaces = sizeof(vFaces) / sizeof(GLuint) / 3;
-
-	obj = object_create(motor, "object", size, nfaces);
-	object_appendpoint(obj, size, &vVertices[0]);
-	object_appendcolor(obj, ncolors, &vColors[0]);
-
-#ifdef STATIC_FACE
-	object_appendface(obj, nfaces, &vFaces[0]);
-#endif
-#else
-	obj = object_load(motor, "object", object);
-#endif
+	if (object == NULL)
+		obj = load_staticobject(motor, "object");
+	else
+		obj = object_load(motor, "object", object);
 	if (obj != NULL)
 	{
 		scene_appendobject(scene, obj);
