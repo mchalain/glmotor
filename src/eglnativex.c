@@ -100,3 +100,7 @@ EGLNativeWindowType native_createwindow(GLuint width, GLuint height, const GLcha
 		FALSE, SubstructureNotifyMask, &xev );
 	return (EGLNativeWindowType) win;
 }
+
+void native_destroy(EGLNativeDisplayType native_display)
+{
+}

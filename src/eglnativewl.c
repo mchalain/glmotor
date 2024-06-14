@@ -217,12 +217,14 @@ EGLNativeDisplayType native_display()
 
 GLboolean native_running(EGLNativeWindowType native_win)
 {
-	wl_display_dispatch_pending (display);
+	struct wl_egl_window *egl_window = (struct wl_egl_window *native_win);
+	wl_display_dispatch_pending(display);
 	return runnning;
 }
 
-void native_destroy(GLMotor_t *motor)
+void native_destroy(EGLNativeDisplayType native_display)
 {
+	struct wl_display *display = (struct wl_display *)native_display;
 	wl_egl_window_destroy(window->egl_window);
 	wl_shell_surface_destroy(window->shell_surface);
 	wl_surface_destroy(window->surface);

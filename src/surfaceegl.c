@@ -110,5 +110,6 @@ GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
 	free(window);
 	free(motor);
 
+	native_destroy();
 	eglTerminate(egl_display);
 }
