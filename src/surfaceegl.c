@@ -171,3 +171,8 @@ GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
 
 	eglTerminate(egl_display);
 }
+
+GLMOTOR_EXPORT EGLDisplay* glmotor_egldisplay(GLMotor_t *motor)
+{
+	return egl_display;
+}
