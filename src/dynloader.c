@@ -247,6 +247,84 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			}
 			object_appendface(obj, 1, position);
 		}
+		else if (! strncmp("mat", line, 1))
+		{
+			int ret = 0;
+			GLMotor_Texture_t *tex = NULL;
+			if (!strncmp(" v4l2", line + 3, 5))
+			{
+				char device[255] = "/dev/video0";
+				GLuint width = 640;
+				GLuint height = 480;
+				uint32_t fourcc = FOURCC('Y','U','Y','V');
+				if (line[3 + 5] == '(')
+				{
+					char fcc1 = 0, fcc2 = 0, fcc3 = 0, fcc4 = 0;
+					char *next = NULL;
+					next = strchr(line + 3 + 5, '(');
+					if (next)
+					{
+						sscanf(next + 1, "\"%s\"", device);
+						char *end = strchr(device, '\"');
+						if (end)
+							end[0] = '\0';
+						next = strchr(next + 1, ',');
+						if (next[1] == ' ') next++;
+					}
+					if (next)
+					{
+						sscanf(next + 1, "%u", &width);
+						next = strchr(next + 1, ',');
+						if (next[1] == ' ') next++;
+					}
+					if (next)
+					{
+						sscanf(next + 1, "%u", &height);
+						next = strchr(next + 1, ',');
+						if (next[1] == ' ') next++;
+					}
+					if (next)
+					{
+						sscanf(next + 1, "%c", &fcc1);
+						next++;
+					}
+					if (next)
+					{
+						sscanf(next + 1, "%c", &fcc2);
+						next++;
+					}
+					if (next)
+					{
+						sscanf(next + 1, "%c", &fcc3);
+						next++;
+					}
+					if (next)
+					{
+						sscanf(next + 1, "%c", &fcc4);
+						next++;
+					}
+					fourcc = FOURCC(fcc1, fcc2, fcc3, fcc4);
+				}
+				tex = texture_fromcamera(motor, device, width, height, fourcc);
+			}
+			else if (!strncmp(" default", line + 3, 7))
+			{
+				GLubyte pixels[4 * 4] =
+				{
+					255,   0,   0, 255,// Red
+					  0, 255,   0, 255, // Green
+					  0,   0, 255, 255, // Blue
+					255, 255,   0, 255  // Yellow
+				};
+				tex = texture_create(motor, 2, 2, FOURCC('A', 'B', '2', '4'), 1, pixels);
+			}
+			else
+			{
+				tex = texture_load(motor, line + 4);
+			}
+			if (tex)
+				object_addtexture(obj, tex);
+		}
 	} while (ret != 0);
 	
 
@@ -254,7 +332,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 	return obj;
 }
 
-GLMOTOR_EXPORT GLMotor_Texture_t * load_texture(GLMotor_t *motor, char *fileName)
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadTGA(GLMotor_t *motor, char *fileName)
 {
 	char *buffer = NULL;
 	FILE *f;
@@ -281,7 +359,8 @@ GLMOTOR_EXPORT GLMotor_Texture_t * load_texture(GLMotor_t *motor, char *fileName
 	width = attributes[1] * 256 + attributes[0];
 	GLuint height = 0;
 	height = attributes[3] * 256 + attributes[2];
-	imagesize = attributes[4] / 8 * width * height;
+	GLuint depth = attributes[4];
+	imagesize = depth / 8 * width * height;
 	buffer = malloc(imagesize);
 	if (buffer == NULL)
 	{
@@ -297,7 +376,64 @@ GLMOTOR_EXPORT GLMotor_Texture_t * load_texture(GLMotor_t *motor, char *fileName
 	fclose(f);
 
 	GLMotor_Texture_t *texture = NULL;
-	texture = texture_create(motor, width, height, buffer);
+	texture = texture_create(motor, width, height, FOURCC('A','B','2','4'), 1, buffer);
 	free(buffer);
 	return texture;
+}
+
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadDDS(GLMotor_t *motor, char *fileName)
+{
+	unsigned char header[124];
+
+	FILE *fp;
+
+	/* try to open the file */
+	fp = fopen(fileName, "rb");
+	if (fp == NULL)
+	{
+		err("%s could not be opened. Are you in the right directory", fileName);
+		return 0;
+	}
+
+	/* verify the type of file */
+	char filecode[4];
+	fread(filecode, 1, 4, fp);
+	if (strncmp(filecode, "DDS ", 4) != 0)
+	{
+		fclose(fp);
+		return 0;
+	}
+
+	/* get the surface desc */
+	fread(&header, 124, 1, fp);
+
+	unsigned int height      = *(unsigned int*)&(header[8 ]);
+	unsigned int width	     = *(unsigned int*)&(header[12]);
+	unsigned int linearSize	 = *(unsigned int*)&(header[16]);
+	unsigned int mipMapCount = *(unsigned int*)&(header[24]);
+	unsigned int fourCC      = *(unsigned int*)&(header[80]);
+
+	unsigned char * buffer;
+	unsigned int bufsize;
+	/* how big is it going to be including all mipmaps? */
+	bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+	buffer = (unsigned char*)malloc(bufsize * sizeof(unsigned char));
+	fread(buffer, 1, bufsize, fp);
+	/* close the file pointer */
+	fclose(fp);
+
+	GLMotor_Texture_t *tex = texture_create(motor, width, height, fourCC, mipMapCount, buffer);
+
+	free(buffer);
+
+	return tex;
+}
+
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_load(GLMotor_t *motor, char *fileName)
+{
+	size_t length = strlen(fileName);
+	if (!strncmp(fileName + length - 4, ".tga",4))
+		return texture_loadTGA(motor, fileName);
+	if (!strncmp(fileName + length - 4, ".dds",4))
+		return texture_loadDDS(motor, fileName);
 }
