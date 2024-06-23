@@ -145,6 +145,7 @@ struct GLMotor_Object_s
 	GLuint maxfaces;
 	GLuint npoints;
 	GLuint nfaces;
+	GLMotor_Texture_t *texture;
 
 	GLfloat move[16];
 	GLfloat defaultcolor[4];
@@ -342,6 +343,12 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMo
 	}
 }
 
+GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex)
+{
+	obj->texture = tex;
+	
+}
+
 GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloat uvs[])
 {
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[3]);
@@ -399,6 +406,9 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 	}
 	GLuint moveID = glGetUniformLocation(motor->programID, "vMove");
 	glUniformMatrix4fv(moveID, 1, GL_FALSE, obj->move);
+
+	if (obj->texture)
+		ret = texture_draw(obj->texture);
 
 	if (obj->nfaces && obj->nfaces < UINT_MAX)
 		glDrawElements(GL_TRIANGLE_STRIP, obj->nfaces * 3, GL_UNSIGNED_INT, 0);
@@ -527,21 +537,4 @@ GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene)
 			break;
 	}
 	free(scene);
-}
-
-/***********************************************************************
- * GLMotor_Texture_t
- **********************************************************************/
-struct GLMotor_Texture_s
-{
-	GLMotor_t *motor;
-	GLuint ID;
-	GLuint npoints;
-	GLuint nfaces;
-};
-
-GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, GLchar *map)
-{
-	GLMotor_Texture_t *texture = NULL;
-	return texture;
 }

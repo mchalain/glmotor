@@ -1,6 +1,7 @@
 bin-y+=glmotor
 glmotor_SOURCES+=main.c
 glmotor_SOURCES+=glmotor.c
+glmotor_SOURCES+=texture.c
 glmotor_SOURCES+=dynloader.c
 glmotor_SOURCES-$(GLUT)+=surfaceglut.c
 glmotor_LIBS-$(GLUT)+=glut
