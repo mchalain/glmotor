@@ -139,17 +139,19 @@ struct GLMotor_Object_s
 {
 	GLMotor_t *motor;
 	char *name;
-	GLuint ID[2];
+	GLuint vertexArrayID;
+	GLuint *ID;
 	GLuint maxpoints;
 	GLuint maxfaces;
 	GLuint npoints;
 	GLuint nfaces;
 
 	GLfloat move[16];
-	GLfloat color[4];
-	GLintptr offsetcolors;
-	GLintptr offsetuvs;
-	GLintptr offsetnormals;
+	GLfloat defaultcolor[4];
+	GLuint position;
+	GLuint color;
+	GLuint uv;
+	GLuint normal;
 	GLuint ncolors;
 	GLuint nuvs;
 	GLuint nnormals;
@@ -157,40 +159,61 @@ struct GLMotor_Object_s
 
 GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *name, GLuint maxpoints, GLuint maxfaces)
 {
-	GLuint objID[2] = {0};
-	glGenBuffers(2, objID);
+	GLuint VAO;
+	glGenVertexArrays(1, &VAO);
+	GLuint *objID = calloc(4, sizeof(*objID));
+	glGenBuffers(5, objID);
+
+	glBindVertexArray(VAO);
+	// assign vertices (points or positions)
 	glBindBuffer(GL_ARRAY_BUFFER, objID[0]);
 	GLsizeiptr size = maxpoints * sizeof(GLfloat) * 3;
-	GLintptr offsetcolors = 0;
-	GLintptr offsetuvs = 0;
-	GLintptr offsetnormals = 0;
-	offsetcolors = size;
-	size += maxpoints * sizeof(GLfloat) * COLOR_COMPONENTS;
-#if 0
-	offsetuvs = size;
-	size += maxpoints * sizeof(GLfloat) * 2;
-	offsetnormals = size;
-	size += maxpoints * sizeof(GLfloat) * 3;
-#endif
-
 	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	GLuint position = glGetAttribLocation(motor->programID, "vPosition");
+	if (position < 0)
+	{
+		err("vertex shader doesn't contain vPosition entry");
+	}
+	else
+		glEnableVertexAttribArray(position);
 
 	if (maxfaces)
 	{
+		// assign faces
 		GLsizeiptr size = maxfaces * sizeof(GLuint) * 3;
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objID[1]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
-		glBindAttribLocation(motor->programID, objID[1], "vPosition" );
 	}
-	else
-		glBindAttribLocation(motor->programID, objID[0], "vPosition" );
+	// assign colors
+	glBindBuffer(GL_ARRAY_BUFFER, objID[2]);
+	size = maxpoints * sizeof(GLfloat) * 3;
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	GLint color = glGetAttribLocation(motor->programID, "vColor");
+	if (color >= 0)
+		glEnableVertexAttribArray(color);
+	
+	// assign uvs
+	glBindBuffer(GL_ARRAY_BUFFER, objID[3]);
+	size = maxpoints * sizeof(GLfloat) * 2;
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	GLint uv = glGetAttribLocation(motor->programID, "vUV");
+	if (uv >= 0)
+		glEnableVertexAttribArray(uv);
+
+	// assign normal
+	glBindBuffer(GL_ARRAY_BUFFER, objID[4]);
+	size = maxpoints * sizeof(GLfloat) * 3;
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	GLint normal = glGetAttribLocation(motor->programID, "vNormal");
+	if (normal >= 0)
+		glEnableVertexAttribArray(normal);
 
 	GLMotor_Object_t *obj;
 	obj = calloc(1, sizeof(*obj));
 	obj->name = strdup(name);
+	obj->vertexArrayID = VAO;
 	obj->motor = motor;
-	obj->ID[0] = objID[0];
-	obj->ID[1] = objID[1];
+	obj->ID = objID;
 	obj->maxpoints = maxpoints;
 	obj->maxfaces = maxfaces;
 
@@ -198,9 +221,10 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 	 obj->move[ 5] =
 	 obj->move[10] =
 	 obj->move[15] = 1;
-	obj->offsetcolors = offsetcolors;
-	obj->offsetuvs = offsetuvs;
-	obj->offsetnormals = offsetnormals;
+	obj->position = position;
+	obj->color = color;
+	obj->uv = uv;
+	obj->normal = normal;
 
 	return obj;
 }
@@ -227,13 +251,13 @@ GLMOTOR_EXPORT GLuint object_appendface(GLMotor_Object_t *obj, GLuint nfaces, GL
 
 GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, GLfloat colors[])
 {
-	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
-	GLuint offset = obj->offsetcolors;
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[2]);
+	GLuint offset = 0;
 	offset += obj->ncolors * sizeof(GLfloat) * COLOR_COMPONENTS;
 	glBufferSubData(GL_ARRAY_BUFFER, offset, ncolors * sizeof(GLfloat) * COLOR_COMPONENTS, colors);
 	obj->ncolors += ncolors;
 	if (obj->ncolors == 1)
-		memcpy(obj->color, colors, ncolors * sizeof(GLfloat) * 4);
+		memcpy(obj->defaultcolor, colors, ncolors * sizeof(GLfloat) * 4);
 	return 0;
 }
 
@@ -320,8 +344,8 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMo
 
 GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloat uvs[])
 {
-	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
-	GLuint offset = obj->offsetuvs;
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[3]);
+	GLuint offset = 0;
 	offset += obj->nuvs * sizeof(GLfloat) * 2;
 	glBufferSubData(GL_ARRAY_BUFFER, offset, nuvs * sizeof(GLfloat) * 2, uvs);
 	obj->nuvs += nuvs;
@@ -330,60 +354,71 @@ GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloa
 
 GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals, GLfloat normals[])
 {
-	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
-	GLuint offset = obj->offsetnormals;
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[4]);
+	GLuint offset = 0;
 	offset += obj->nnormals * sizeof(GLfloat) * 3;
 	glBufferSubData(GL_ARRAY_BUFFER, offset, nnormals * sizeof(GLfloat) * 2, normals);
 	obj->nnormals += nnormals;
 	return 0;
 }
 
-GLMOTOR_EXPORT GLuint object_draw(GLMotor_Object_t *obj)
+GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 {
+	GLint ret = 0;
 	GLMotor_t *motor = obj->motor;
+
+	glBindVertexArray(obj->vertexArrayID);
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	GLuint moveID = glGetUniformLocation(motor->programID, "vMove");
-	glUniformMatrix4fv(moveID, 1, GL_FALSE, obj->move);
+	glEnableVertexAttribArray(obj->position);
+	glVertexAttribPointer(obj->position, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	if (obj->ncolors == 1)
 	{
-		glVertexAttrib4fv(1, obj->color);
+		glVertexAttrib4fv(obj->color, obj->defaultcolor);
 	}
 	else if (obj->ncolors)
 	{
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, COLOR_COMPONENTS, GL_FLOAT, GL_FALSE, obj->offsetcolors, (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, obj->ID[2]);
+		glEnableVertexAttribArray(obj->color);
+		glVertexAttribPointer(obj->color, COLOR_COMPONENTS, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	}
 	if (obj->nuvs)
 	{
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, obj->offsetuvs, (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, obj->ID[3]);
+		glEnableVertexAttribArray(obj->uv);
+		glVertexAttribPointer(obj->uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	}
 	if (obj->nnormals)
 	{
-		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, obj->offsetnormals, (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, obj->ID[4]);
+		glEnableVertexAttribArray(obj->normal);
+		glVertexAttribPointer(obj->normal, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	}
 	if (obj->nfaces)
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
 	}
+	GLuint moveID = glGetUniformLocation(motor->programID, "vMove");
+	glUniformMatrix4fv(moveID, 1, GL_FALSE, obj->move);
 
 	if (obj->nfaces && obj->nfaces < UINT_MAX)
 		glDrawElements(GL_TRIANGLE_STRIP, obj->nfaces * 3, GL_UNSIGNED_INT, 0);
 	else
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, obj->npoints);
-	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(obj->position);
+	if (obj->ncolors)
+		glDisableVertexAttribArray(obj->color);
+	if (obj->nuvs)
+		glDisableVertexAttribArray(obj->uv);
+	if (obj->nnormals)
+		glDisableVertexAttribArray(obj->normal);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0 );
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0 );
-   	return 0;
+	return ret;
 }
 
 GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj)
 {
 	glDeleteBuffers(2, obj->ID);
+	free(obj->ID);
 	free(obj->name);
 	free(obj);
 }
@@ -463,16 +498,23 @@ GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const c
 	
 }
 
-GLMOTOR_EXPORT void scene_draw(GLMotor_Scene_t *scene)
+GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 {
+	GLint ret = 0;
 	GLMotor_t *motor = scene->motor;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #ifdef HAVE_GLEW
 	glLoadIdentity();
 #endif
+	glUseProgram(motor->programID);
 
 	for (GLMotor_list_t *it = scene->objects; it != NULL; it = it->next)
-		object_draw((GLMotor_Object_t *)it->entity);
+	{
+		ret = object_draw((GLMotor_Object_t *)it->entity);
+		if (ret)
+			break;
+	}
+	return ret;
 }
 
 GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene)
