@@ -83,6 +83,8 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	warn("glmotor: use egl %s", native->name);
 
 	EGLNativeDisplayType display = native->display();
+	if (display == NULL)
+		err("glmotor: unable to open the display");
 #if 1
 	egl_display = eglGetDisplay(display);
 #else
