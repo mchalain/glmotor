@@ -6,8 +6,9 @@
 
 #include <linux/videodev2.h>
 
-#ifndef HAVE_GLEW
+#ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
+# include <GLES2/gl2ext.h>
 #else
 # include <GL/glew.h>
 #endif
@@ -70,6 +71,9 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 		break;
 	case FOURCC('A','B','2','4'):
 		format = GL_RGBA;
+		break;
+	case FOURCC('R','G','2','4'):
+		format = GL_RGB;
 		break;
 	default:
 		dbg("format %.4s", &fourcc);
@@ -144,7 +148,6 @@ GLMOTOR_EXPORT void texture_destroy(GLMotor_Texture_t *tex)
 #ifdef HAVE_EGL
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <GLES2/gl2ext.h>
 
 PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;
 PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR = NULL;
@@ -198,20 +201,37 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	int support_fmt = 0;
 	while (!ioctl(fd, VIDIOC_ENUM_FMT, &ffmt))
 	{
-		dbg("fmt %d %s", ffmt.pixelformat, ffmt.description);
-		if (ffmt.pixelformat == V4L2_PIX_FMT_YUYV)
+		dbg("fmt %.4s %s", &ffmt.pixelformat, ffmt.description);
+		if (ffmt.pixelformat == fourcc)
 			support_fmt = 1;
 		ffmt.index++;
 	}
+	if (!support_fmt)
+		err("glmotor: v4l2 %.4s format not supported", &fourcc);
 	struct v4l2_frmsizeenum fsize = {0};
 	fsize.index = 0;
 	fsize.pixel_format = V4L2_PIX_FMT_YUYV;
 	int support_size = 0;
 	while (!ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &fsize))
 	{
-		dbg("frame size %dx%d", fsize.discrete.width, fsize.discrete.height);
-		if (fsize.discrete.width == width && fsize.discrete.height == height)
+		if (fsize.type == V4L2_FRMSIZE_TYPE_STEPWISE)
+		{
+			if (width > (fsize.stepwise.max_width))
+				width = fsize.stepwise.max_width;
+			if (width < (fsize.stepwise.min_width))
+				width = fsize.stepwise.min_width;
+			if (height > (fsize.stepwise.max_height))
+				height = fsize.stepwise.max_height;
+			if (height < (fsize.stepwise.min_height))
+				height = fsize.stepwise.min_height;
 			support_size = 1;
+		}
+		else
+		{
+			dbg("frame size %dx%d", fsize.discrete.width, fsize.discrete.height);
+			if (fsize.discrete.width == width && fsize.discrete.height == height)
+				support_size = 1;
+		}
 		fsize.index++;
 	}
 
@@ -223,34 +243,54 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 			   input.name, input.type, input.status, input.std);
 		input.index++;
 	}
-	int index;
-	if (ioctl(fd, VIDIOC_G_INPUT, &index))
-		return NULL;
-	dbg("current input index=%d", index);
-
+	if (input.index > 0)
+	{
+		int index;
+		if (ioctl(fd, VIDIOC_G_INPUT, &index))
+			return NULL;
+		dbg("current input index=%d", index);
+	}
 	struct v4l2_format fmt = {0};
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (ioctl(fd, VIDIOC_G_FMT, &fmt))
+	{
+		err("glmotor: get v4l2 fmt error %m");
 		return NULL;
+	}
 	dbg("fmt width=%d height=%d pfmt=%.4s",
 		   fmt.fmt.pix.width, fmt.fmt.pix.height, &fmt.fmt.pix.pixelformat);
 
 	fmt.fmt.pix.width = width;
 	fmt.fmt.pix.height = height;
-	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+	fmt.fmt.pix.pixelformat = fourcc;
 	if (ioctl(fd, VIDIOC_S_FMT, &fmt))
+	{
+		err("glmotor: set v4l2 fmt error %m");
 		return NULL;
+	}
 	/// verify fmt
 	memset(&fmt, 0, sizeof(fmt));
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (ioctl(fd, VIDIOC_G_FMT, &fmt))
+	{
+		err("glmotor: get v4l2 fmt error %m");
 		return NULL;
+	}
 	if (fmt.fmt.pix.width != width)
+	{
+		err("glmotor: bad width %u", fmt.fmt.pix.width);
 		return NULL;
+	}
 	if (fmt.fmt.pix.height != height)
+	{
+		err("glmotor: bad height %u", fmt.fmt.pix.height);
 		return NULL;
+	}
 	if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV)
+	{
+		err("glmotor: bad pixelformat %u", fmt.fmt.pix.pixelformat);
 		return NULL;
+	}
 
 	int nbuffers = 5;
 
@@ -259,9 +299,15 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	reqbuf.memory = V4L2_MEMORY_MMAP;
 	if (ioctl(fd, VIDIOC_REQBUFS, &reqbuf))
+	{
+		err("glmotor: request v4l2 buffers error %m");
 		return NULL;
+	}
 	if (reqbuf.count != nbuffers)
+	{
+		err("glmotor: not enough buffers %u", reqbuf.count);
 		return NULL;
+	}
 
 	GLuint *textures = calloc(nbuffers, sizeof(GLuint));
 	glGenTextures(nbuffers, textures);
@@ -310,6 +356,11 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 			nbuffers = i;
 			break;
 		}
+	}
+	if (nbuffers == 0)
+	{
+		err("glmotor: impossible to allocate buffers");
+		return NULL;
 	}
 	GLMotor_TextureCamera_t *camera;
 	camera = calloc(1, sizeof(*camera));
