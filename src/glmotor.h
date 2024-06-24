@@ -15,6 +15,13 @@ typedef void (*GLMotor_Draw_func_t)(void *);
 
 typedef GLMOTOR_SURFACE_S GLMotor_Surface_t;
 
+typedef struct GLMotor_list_s GLMotor_list_t;
+struct GLMotor_list_s
+{
+	void *entity;
+	GLMotor_list_t *next;
+};
+
 typedef struct GLMotor_s GLMotor_t;
 struct GLMotor_s
 {

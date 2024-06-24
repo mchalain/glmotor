@@ -16,13 +16,6 @@
 #include "glmotor.h"
 #include "log.h"
 
-typedef struct GLMotor_list_s GLMotor_list_t;
-struct GLMotor_list_s
-{
-	void *entity;
-	GLMotor_list_t *next;
-};
-
 static void display_log(GLuint instance)
 {
 	GLint logSize = 0;
