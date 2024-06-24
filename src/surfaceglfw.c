@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #ifndef HAVE_GLEW
-# include <GLES2/gl2.h>
+# include <GL/gl.h>
 #else
 # include <GL/glew.h>
 #endif
