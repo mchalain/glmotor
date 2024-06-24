@@ -56,6 +56,7 @@ GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex);
 GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra);
 GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj);
+GLMOTOR_EXPORT const char * object_name(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj);
 
 typedef struct GLMotor_Scene_s GLMotor_Scene_t;

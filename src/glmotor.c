@@ -4,7 +4,7 @@
 #include <limits.h>
 #include <string.h>
 
-#ifndef HAVE_GLEW
+#ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
 #else
 # include <GL/glew.h>
@@ -94,6 +94,7 @@ static GLuint load_shader(GLenum type, GLchar *source, GLuint size)
 
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLuint vertexSize, GLchar *fragmentSource, GLuint fragmentSize)
 {
+	warn("glmotor use : %s", glGetString(GL_VERSION));
 	warn("glmotor use : %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	GLuint vertexID = load_shader(GL_VERTEX_SHADER, vertexSource, vertexSize);
 	if (vertexID == 0)
@@ -425,6 +426,11 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 	return ret;
 }
 
+GLMOTOR_EXPORT const char * object_name(GLMotor_Object_t *obj)
+{
+	return obj->name;
+}
+
 GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj)
 {
 	glDeleteBuffers(2, obj->ID);
@@ -453,7 +459,7 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
 
-#ifdef HAVE_GLEW
+#ifdef GLEW
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 #ifdef HAVE_GLU
@@ -474,7 +480,7 @@ GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *came
 	const GLfloat *applyTarget = defaultTarget;
 	if (target != NULL)
 		applyTarget = target;
-#ifdef HAVE_GLEW
+#ifdef GLEW
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 #endif
@@ -498,7 +504,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const c
 	GLMotor_Object_t *obj = NULL;
 	for (GLMotor_list_t *entry = scene->objects; entry != NULL; entry = entry->next)
 	{
-		if (!strcmp(((GLMotor_Object_t *)entry->entity)->name, name))
+		if (!strcmp(object_name((GLMotor_Object_t *)entry->entity), name))
 		{
 			obj = entry->entity;
 			break;
@@ -513,7 +519,7 @@ GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 	GLint ret = 0;
 	GLMotor_t *motor = scene->motor;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#ifdef HAVE_GLEW
+#ifdef GLEW
 	glLoadIdentity();
 #endif
 	glUseProgram(motor->programID);
