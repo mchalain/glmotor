@@ -150,11 +150,13 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			fseek(pFile, end - line + 1, SEEK_CUR);
 			*end = '\0';
 		}
+		char *next = NULL;
 		numline++;
 		if (! strncmp("vc", line, 2))
 		{
+			next = line + 2;
 			GLfloat color[4] = {0};
-			int ret = sscanf(line + 2, "%f %f %f %f",
+			int ret = sscanf(next, "%f %f %f %f",
 				&color[0], &color[1], &color[2], &color[3]);
 			if (ret == 3)
 			{
@@ -170,9 +172,9 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		}
 		else if (! strncmp("vt", line, 2))
 		{
+			next = line + 2;
 			GLfloat uv[3] = {0};
-			int ret = sscanf(line + 2, "%f %f",
-				&uv[0], &uv[1]);
+			int ret = sscanf(next, "%f %f", &uv[0], &uv[1]);
 			if (ret != 2)
 			{
 				err("glmotor: object vertex misformated vt %d line %u", ret, numline);
@@ -180,11 +182,11 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			}
 			object_appenduv(obj, 1, uv);
 		}
-		else if (! strncmp("vn", line, 2))
+		else if (!strncmp("vn", line, 2))
 		{
+			next = line + 2;
 			GLfloat normal[3] = {0};
-			int ret = sscanf(line + 2, "%f %f %f",
-				&normal[0], &normal[1], &normal[2]);
+			int ret = sscanf(next, "%f %f %f", &normal[0], &normal[1], &normal[2]);
 			if (ret != 3)
 			{
 				err("glmotor: object vertex misformated vn %d line %u", ret, numline);
@@ -192,11 +194,11 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			}
 			object_appendnormal(obj, 1, normal);
 		}
-		else if (! strncmp("v", line, 1))
+		else if (!strncmp("v", line, 1))
 		{
+			next = line + 1;
 			GLfloat point[3] = {0};
-			int ret = sscanf(line + 1, "%f %f %f",
-				&point[0], &point[1], &point[2]);
+			int ret = sscanf(next, "%f %f %f", &point[0], &point[1], &point[2]);
 			if (ret != 3)
 			{
 				err("glmotor: object vertex misformated v %d line %u", ret, numline);
@@ -206,6 +208,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		}
 		else if (! strncmp("f", line, 1))
 		{
+			next = line + 1;
 			GLuint position[3] = {0};
 			GLuint uv[3] = {0};
 			GLuint normal[3] = {0};
@@ -216,17 +219,17 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 				switch (format)
 				{
 				case 1:
-					ret = sscanf(line + 1, "%u %u %u",
+					ret = sscanf(next, "%u %u %u",
 						&position[0], &position[1], &position[2]);
 				break;
 				case 2:
-					ret = sscanf(line + 1, "%u/%u %u/%u %u/%u",
+					ret = sscanf(next, "%u/%u %u/%u %u/%u",
 						&position[0], &uv[0],
 						&position[1], &uv[1],
 						&position[2], &uv[2]);
 				break;
 				case 3:
-					ret = sscanf(line + 1, "%u/%u/%u %u/%u/%u %u/%u/%u",
+					ret = sscanf(next, "%u/%u/%u %u/%u/%u %u/%u/%u",
 						&position[0], &uv[0], &normal[0],
 						&position[1], &uv[1], &normal[1],
 						&position[2], &uv[2], &normal[2]);
@@ -247,71 +250,77 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			}
 			object_appendface(obj, 1, position);
 		}
-		else if (! strncmp("mat", line, 1))
+		else if (! strncmp("usemtl", line, 6))
 		{
+			next = line + 6;
 			int ret = 0;
 			GLMotor_Texture_t *tex = NULL;
-			if (!strncmp(" v4l2", line + 3, 5))
+			if (!strncmp(" v4l2", next, 5))
 			{
+				next = line + 5;
 				char device[255] = "/dev/video0";
 				GLuint width = 640;
 				GLuint height = 480;
 				uint32_t fourcc = FOURCC('Y','U','Y','V');
-				if (line[3 + 5] == '(')
+				char fcc1 = 0, fcc2 = 0, fcc3 = 0, fcc4 = 0;
+				next = strchr(next, '(');
+				if (next)
 				{
-					char fcc1 = 0, fcc2 = 0, fcc3 = 0, fcc4 = 0;
-					char *next = NULL;
-					next = strchr(line + 3 + 5, '(');
-					if (next)
-					{
-						sscanf(next + 1, "\"%s\"", device);
-						char *end = strchr(device, '\"');
-						if (end)
-							end[0] = '\0';
-						next = strchr(next + 1, ',');
-						if (next[1] == ' ') next++;
-					}
-					if (next)
-					{
-						sscanf(next + 1, "%u", &width);
-						next = strchr(next + 1, ',');
-						if (next[1] == ' ') next++;
-					}
-					if (next)
-					{
-						sscanf(next + 1, "%u", &height);
-						next = strchr(next + 1, ',');
-						if (next[1] == ' ') next++;
-					}
-					if (next)
-					{
-						sscanf(next + 1, "%c", &fcc1);
-						next++;
-					}
-					if (next)
-					{
-						sscanf(next + 1, "%c", &fcc2);
-						next++;
-					}
-					if (next)
-					{
-						sscanf(next + 1, "%c", &fcc3);
-						next++;
-					}
-					if (next)
-					{
-						sscanf(next + 1, "%c", &fcc4);
-						next++;
-					}
+					next++;
+					sscanf(next, "\"%s\"", device);
+					char *end = strchr(device, '\"');
+					if (end)
+						end[0] = '\0';
+					next = strchr(next + 1, ',');
+					if (next[1] == ' ') next++;
+				}
+				if (next)
+				{
+					next++;
+					sscanf(next, "%u", &width);
+					next = strchr(next, ',');
+					if (next[1] == ' ') next++;
+				}
+				if (next)
+				{
+					next++;
+					sscanf(next, "%u", &height);
+					next = strchr(next, ',');
+					if (next[1] == ' ') next++;
+				}
+				if (next)
+				{
+					next++;
+					sscanf(next, "%c", &fcc1);
+				}
+				if (next)
+				{
+					next++;
+					sscanf(next, "%c", &fcc2);
+				}
+				if (next)
+				{
+					next++;
+					sscanf(next, "%c", &fcc3);
+				}
+				if (next)
+				{
+					next++;
+					sscanf(next, "%c", &fcc4);
+					next = strchr(next + 1, ')');
+				}
+				if (next)
+				{
 					fourcc = FOURCC(fcc1, fcc2, fcc3, fcc4);
 				}
 				tex = texture_fromcamera(motor, device, width, height, fourcc);
 			}
 			else if (!strncmp(" default", line + 3, 7))
 			{
+				next = line + 3;
 				GLubyte pixels[4 * 4] =
 				{
-					255,   0,   0, 255,// Red
+					255,   0,   0, 255, // Red
 					  0, 255,   0, 255, // Green
 					  0,   0, 255, 255, // Blue
 					255, 255,   0, 255  // Yellow
