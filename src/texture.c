@@ -51,6 +51,10 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 
 	GLuint textureID;
 	glGenTextures(1, &textureID);
+	int max_texture_size = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
+	width = (width >  max_texture_size)? max_texture_size:width;
+	height = (height >  max_texture_size)? max_texture_size:height;
 
 	// "Bind" the newly created texture : all future texture functions will modify this texture
 	glBindTexture(GL_TEXTURE_2D, textureID);
@@ -76,7 +80,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 		format = GL_RGB;
 		break;
 	default:
-		dbg("format %.4s", &fourcc);
+		dbg("format %.4s", (char*)&fourcc);
 	}
 	if (format >= GL_COMPRESSED_RGB_S3TC_DXT1_EXT && format <= GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
 	{
@@ -102,7 +106,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 	else
 	{
 		// Give the image to OpenGL
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, map);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, map);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
