@@ -85,8 +85,10 @@ static GLuint load_shader(GLenum type, GLchar *source, GLuint size)
 
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLuint vertexSize, GLchar *fragmentSource, GLuint fragmentSize)
 {
-	warn("glmotor use : %s", glGetString(GL_VERSION));
-	warn("glmotor use : %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	warn("glmotor uses : %s", glGetString(GL_VERSION));
+	warn("glmotor uses : %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	const char * extensions = glGetString(GL_EXTENSIONS);
+	dbg("glmotor uses extensions:\n%s", extensions);
 	GLuint vertexID = load_shader(GL_VERTEX_SHADER, vertexSource, vertexSize);
 	if (vertexID == 0)
 		return 0;
