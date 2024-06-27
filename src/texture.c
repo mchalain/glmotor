@@ -153,11 +153,20 @@ GLMOTOR_EXPORT void texture_destroy(GLMotor_Texture_t *tex)
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
+#define MAX_CAMERA_BUFFERS 5
+
 PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;
 PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR = NULL;
 PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = NULL;
 
 extern GLMOTOR_EXPORT EGLDisplay* glmotor_egldisplay(GLMotor_t *motor);
+
+typedef struct GLMotor_TextureCameraBuffer_s GLMotor_TextureCameraBuffer_t;
+struct GLMotor_TextureCameraBuffer_s
+{
+	GLuint ID;
+	EGLImageKHR image;
+};
 
 typedef struct GLMotor_TextureCamera_s GLMotor_TextureCamera_t;
 struct GLMotor_TextureCamera_s
@@ -165,7 +174,8 @@ struct GLMotor_TextureCamera_s
 	int fd;
 	int nbuffers;
 	int bufid;
-	GLuint *textures;
+	GLMotor_TextureCameraBuffer_t *textures;
+	GLenum family;
 };
 
 static GLint texturecamera_draw(GLMotor_Texture_t *tex);
@@ -173,6 +183,13 @@ static void texturecamera_destroy(GLMotor_Texture_t *tex);
 
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const char *device, GLuint width, GLuint height, uint32_t fourcc)
 {
+	int nbuffers = MAX_CAMERA_BUFFERS;
+
+	int max_texture_size = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
+	width = (width >  max_texture_size)? max_texture_size:width;
+	height = (height >  max_texture_size)? max_texture_size:height;
+
 	GLuint texture  = glGetUniformLocation(motor->programID, "vTexture");
 	if (texture == -1)
 	{
@@ -205,16 +222,15 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	int support_fmt = 0;
 	while (!ioctl(fd, VIDIOC_ENUM_FMT, &ffmt))
 	{
-		dbg("fmt %.4s %s", &ffmt.pixelformat, ffmt.description);
 		if (ffmt.pixelformat == fourcc)
 			support_fmt = 1;
 		ffmt.index++;
 	}
 	if (!support_fmt)
-		err("glmotor: v4l2 %.4s format not supported", &fourcc);
+		err("glmotor: v4l2 %.4s format not supported", (char*)&fourcc);
 	struct v4l2_frmsizeenum fsize = {0};
 	fsize.index = 0;
-	fsize.pixel_format = V4L2_PIX_FMT_YUYV;
+	fsize.pixel_format = fourcc;
 	int support_size = 0;
 	while (!ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &fsize))
 	{
@@ -262,7 +278,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		return NULL;
 	}
 	dbg("fmt width=%d height=%d pfmt=%.4s",
-		   fmt.fmt.pix.width, fmt.fmt.pix.height, &fmt.fmt.pix.pixelformat);
+		   fmt.fmt.pix.width, fmt.fmt.pix.height, (char*)&fmt.fmt.pix.pixelformat);
 
 	fmt.fmt.pix.width = width;
 	fmt.fmt.pix.height = height;
@@ -290,13 +306,12 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		err("glmotor: bad height %u", fmt.fmt.pix.height);
 		return NULL;
 	}
-	if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV)
+	if (fmt.fmt.pix.pixelformat != fourcc)
 	{
-		err("glmotor: bad pixelformat %u", fmt.fmt.pix.pixelformat);
+		err("glmotor: bad pixelformat %.4s", (char*)&fmt.fmt.pix.pixelformat);
 		return NULL;
 	}
-
-	int nbuffers = 5;
+	GLuint stride = fmt.fmt.pix.bytesperline;
 
 	struct v4l2_requestbuffers reqbuf;
 	reqbuf.count = nbuffers;
@@ -313,43 +328,87 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		return NULL;
 	}
 
-	GLuint *textures = calloc(nbuffers, sizeof(GLuint));
-	glGenTextures(nbuffers, textures);
+	EGLint *attrib_list;
+	EGLint attrib_list_yuv12[] = {
+		EGL_WIDTH, width,
+		EGL_HEIGHT, height,
+		EGL_LINUX_DRM_FOURCC_EXT, FOURCC('Y','U','1','2'),
+		EGL_DMA_BUF_PLANE0_FD_EXT, 0,
+		EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+		EGL_DMA_BUF_PLANE0_PITCH_EXT, stride,
+		EGL_DMA_BUF_PLANE1_FD_EXT, 0,
+		EGL_DMA_BUF_PLANE1_OFFSET_EXT, stride * height,
+		EGL_DMA_BUF_PLANE1_PITCH_EXT, stride / 2,
+		EGL_DMA_BUF_PLANE2_FD_EXT, 0,
+		EGL_DMA_BUF_PLANE2_OFFSET_EXT, (stride * height) * 5 / 4 ,
+		EGL_DMA_BUF_PLANE2_PITCH_EXT, stride / 2,
+		EGL_NONE
+	};
+	EGLint attrib_list_rgb[] = {
+		EGL_WIDTH, width,
+		EGL_HEIGHT, height,
+		EGL_LINUX_DRM_FOURCC_EXT, FOURCC('A','B','2','4'),
+		EGL_DMA_BUF_PLANE0_FD_EXT, 0,
+		EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+		EGL_DMA_BUF_PLANE0_PITCH_EXT, stride,
+		EGL_NONE
+	};
+	switch (fourcc)
+	{
+	case FOURCC('Y','U','1','2'):
+		attrib_list = attrib_list_yuv12;
+		attrib_list[5] = fourcc;
+	break;
+	case FOURCC('Y','U','Y','V'):
+		attrib_list = attrib_list_rgb;
+		attrib_list[11] = width * sizeof(uint32_t);
+	break;
+	default:
+		attrib_list = attrib_list_rgb;
+		attrib_list[5] = fourcc;
+	break;
+	}
+	GLenum texturefamily = GL_TEXTURE_2D;
+	if (strstr(glGetString(GL_EXTENSIONS), "OES_EGL_image_external"))
+	{
+		glEnable(GL_TEXTURE_EXTERNAL_OES);
+		texturefamily = GL_TEXTURE_EXTERNAL_OES;
+	}
+	GLMotor_TextureCameraBuffer_t *textures = calloc(nbuffers, sizeof(GLuint));
 	for (int i = 0; i < nbuffers; i++)
 	{
+		glGenTextures(nbuffers, &textures[i].ID);
 		struct v4l2_exportbuffer expbuf = {0};
 		expbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		expbuf.index = i;
-		expbuf.flags = O_RDWR;
+		expbuf.flags = O_CLOEXEC | O_RDWR;
 		if (ioctl(fd, VIDIOC_EXPBUF, &expbuf))
 		{
+			dbg("%s %d", __FILE__, __LINE__);
 			nbuffers = i;
 			break;
 		}
 
-		EGLint attrib_list[] = {
-			EGL_WIDTH, width,
-			EGL_HEIGHT, height,
-			EGL_LINUX_DRM_FOURCC_EXT, FOURCC('A','B','2','4'),
-			EGL_DMA_BUF_PLANE0_FD_EXT, expbuf.fd,
-			EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-			EGL_DMA_BUF_PLANE0_PITCH_EXT, width * sizeof(uint32_t),
-			EGL_NONE
-		};
-		EGLImageKHR image = eglCreateImageKHR(glmotor_egldisplay(motor),
+		attrib_list[7] = expbuf.fd;
+		if (fourcc == FOURCC('Y','U','1','2'))
+		{
+			attrib_list[13] = expbuf.fd;
+			attrib_list[19] = expbuf.fd;
+		}
+		glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+		glBindTexture(texturefamily, textures[i].ID);
+		textures[i].image = eglCreateImageKHR(glmotor_egldisplay(motor),
 			EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attrib_list);
-		if (image == EGL_NO_IMAGE_KHR)
+		if (textures[i].image == EGL_NO_IMAGE_KHR)
 		{
 			nbuffers = i;
 			break;
 		}
 
-		glBindTexture(GL_TEXTURE_2D, textures[i]);
-		glPixelStorei(GL_UNPACK_ALIGNMENT,1);	
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		glTexParameteri(texturefamily, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(texturefamily, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glEGLImageTargetTexture2DOES(texturefamily, textures[i].image);
+		eglDestroyImageKHR(glmotor_egldisplay(motor), textures[i].image);
 
 		struct v4l2_buffer buf = {0};
 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -360,10 +419,11 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 			nbuffers = i;
 			break;
 		}
+		dbg("glmotor: buffer %d queued dmafd %d", i, expbuf.fd);
 	}
 	if (nbuffers == 0)
 	{
-		err("glmotor: impossible to allocate buffers");
+		err("glmotor: impossible to allocate buffers %m");
 		return NULL;
 	}
 	GLMotor_TextureCamera_t *camera;
@@ -371,6 +431,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	camera->fd = fd;
 	camera->nbuffers = nbuffers;
 	camera->textures = textures;
+	camera->family = texturefamily;
 
 	GLMotor_Texture_t *tex;
 	tex = calloc(1, sizeof(*tex));
@@ -392,17 +453,8 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		close(fd);
 		return NULL;
 	}
-#if 0
-	struct v4l2_buffer buf = {0};
-	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	buf.memory = V4L2_MEMORY_MMAP;
-	if (ioctl(camera->fd, VIDIOC_DQBUF, &buf))
-		return NULL;
-	glBindTexture(GL_TEXTURE_2D, camera->textures[buf.index]);
-	camera->bufid = buf.index;
-#else
+	dbg("glmotor: camera running");
 	camera->bufid = -1;
-#endif
 	return tex;
 }
 
@@ -410,23 +462,21 @@ static GLint texturecamera_draw(GLMotor_Texture_t *tex)
 {
 	GLMotor_TextureCamera_t *camera = tex->private;
 	struct v4l2_buffer buf = {0};
+	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	buf.memory = V4L2_MEMORY_MMAP;
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	// unbind texture may lag the video
+	//glBindTexture(camera->family, 0);
 	if (camera->bufid > -1)
 	{
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		buf.index = camera->bufid;
-		buf.memory = V4L2_MEMORY_MMAP;
 		if (ioctl(camera->fd, VIDIOC_QBUF, &buf))
 			return -1;
 	}
-	memset(&buf, 0, sizeof(buf));
-	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	buf.memory = V4L2_MEMORY_MMAP;
 	if (ioctl(camera->fd, VIDIOC_DQBUF, &buf))
 		return -1;
 
-	glBindTexture(GL_TEXTURE_2D, camera->textures[buf.index]);
+	glBindTexture(camera->family, camera->textures[buf.index].ID);
 	camera->bufid = buf.index;
 	return 0;
 }
