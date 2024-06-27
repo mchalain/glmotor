@@ -20,4 +20,4 @@ vt 0 0
 vt 1 0
 vt 1 1
 
-mat data/utc32.tga
+usemtl default

@@ -1,9 +1,10 @@
+#extension GL_OES_EGL_image_external : require
 #if GL_ES
 precision mediump float;
 #endif
 varying vec2 texUV;
 
-uniform sampler2D vTexture;
+uniform samplerExternalOES vTexture;
 
 void main(void)
 {
