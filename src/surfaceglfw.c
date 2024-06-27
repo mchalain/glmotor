@@ -120,6 +120,11 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 	return 0;
 }
 
+GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
+{
+	return glfwSwapBuffers(motor->surf);
+}
+
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
 {
 	glfwTerminate();

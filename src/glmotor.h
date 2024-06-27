@@ -43,6 +43,7 @@ struct GLMotor_RotAxis_s
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv);
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertex, GLuint vertexSize, GLchar *fragment, GLuint fragmentSize);
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata);
+GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor);
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor);
 
 typedef struct GLMotor_Texture_s GLMotor_Texture_t;

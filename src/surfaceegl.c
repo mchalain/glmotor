@@ -152,6 +152,8 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata)
 {
+	eglMakeCurrent(egl_display, motor->surf->egl_surface, motor->surf->egl_surface, motor->surf->egl_context);
+
 	do
 	{
 		eglSwapBuffers(egl_display, motor->surf->egl_surface);
@@ -160,10 +162,17 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 	return 0;
 }
 
+GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
+{
+	return eglSwapBuffers(egl_display, motor->surf->egl_surface);
+}
+
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
 {
 	GLMotor_Surface_t *window = motor->surf;
 
+	eglMakeCurrent(egl_display, EGL_NO_SURFACE,
+                  EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	eglDestroySurface(egl_display, window->egl_surface);
 	eglDestroyContext(egl_display, window->egl_context);
 

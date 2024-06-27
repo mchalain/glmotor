@@ -122,6 +122,12 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 	return 0;
 }
 
+GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
+{
+	err("glmotor: swapbuffers unsupported with glut");
+	return -1;
+}
+
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
 {
 	free(motor);
