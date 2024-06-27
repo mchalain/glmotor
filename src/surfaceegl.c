@@ -91,6 +91,9 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = eglGetProcAddress("eglGetPlatformDisplayEXT");
 	egl_display = eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR, display, NULL);
 #endif
+	const char * extensions = eglQueryString(display, EGL_EXTENSIONS);
+	dbg("glmotor: egl extensions\n%s", extensions);
+
 	EGLNativeWindowType native_win;
 	native_win = native->createwindow(display, width, height, name);
 
@@ -137,7 +140,10 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 		pbufferAttribs[3] = height;
 		window->egl_surface = eglCreatePbufferSurface(egl_display, config, pbufferAttribs);
 	}
-	EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
+	EGLint contextAttribs[] = {
+		EGL_CONTEXT_CLIENT_VERSION, 2,
+		EGL_NONE
+	};
 	window->egl_context = eglCreateContext(egl_display, config, EGL_NO_CONTEXT, contextAttribs);
 
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
