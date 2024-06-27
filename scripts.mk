@@ -266,6 +266,9 @@ infodir?=$(datarootdir)/info
 localedir?=$(datarootdir)/locale
 mandir?=$(datarootdir)/man
 PATHES=prefix exec_prefix library_prefix bindir sbindir libexecdir libdir sysconfdir includedir datadir pkgdatadir pkglibdir localstatedir docdir builddir
+ifneq ($(BUILDDIR),)
+  PATHES+=BUILDDIR
+endif
 ifneq ($(TOOLCHAIN),)
   PATHES+=TOOLCHAIN
 endif
@@ -976,7 +979,6 @@ configfiles+=$(wildcard $(CONFIGFILE))
 configfiles+=$(wildcard $(VERSIONFILE))
 configfiles+=$(wildcard $(TMPCONFIG))
 configfiles+=$(wildcard $(PATHCACHE))
-configfiles+=$(wildcard $(CONFIG))
 
 cleanconfig: TMPCONFIG:=$(builddir).tmpconfig
 cleanconfig: FORCE
@@ -998,8 +1000,9 @@ _oldconfig: $(DEFCONFIG) $(PATHCACHE)
 # 2) relaunch with _defconfig target
 defconfig: action:=_defconfig
 defconfig: TMPCONFIG:=$(builddir).tmpconfig
-defconfig: build:=$(action) TMPCONFIG=$(builddir).tmpconfig -f $(makemore) file
-defconfig: cleanconfig $(builddir) default_action ;
+defconfig: cleanconfig $(builddir)
+	$(Q)$(call cmd,clean,$(CONFIG))
+	$(Q)$(MAKE) _defconfig TMPCONFIG=$(builddir).tmpconfig -f $(makemore) file=$(file)
 
 # manage the defconfig files
 # 1) set the DEFCONFIG variable
@@ -1115,7 +1118,7 @@ _help_options_main:
 	@echo "    pkglibdir=<directory path>   default $$exec_prefix/lib/<package>"
 	@echo "    datadir=<directory path>     default $$exec_prefix/share/<package>"
 	@echo ""
-	@echo "    builddir=<directory path>        default ."
+	@echo "    BUILDDIR=<directory path>        default ."
 	@echo "    CROSS_COMPILE=<compiler prefix>  default empty"
 	@echo "    SYSROOT=<system root directory>  default empty or /"
 	@echo "    TOOLCHAIN=<directory path>       default empty"
