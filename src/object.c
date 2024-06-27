@@ -5,12 +5,14 @@
 
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
+# include <GLES2/gl2ext.h>
 #else
 # include <GL/glew.h>
 #endif
 #ifdef HAVE_GLU
 #include <GL/glu.h>
 #endif
+#include <GL/gl.h>
 
 #include "glmotor.h"
 #include "log.h"
@@ -229,7 +231,6 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMo
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex)
 {
 	obj->texture = tex;
-	
 }
 
 GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloat uvs[])
@@ -315,6 +316,8 @@ GLMOTOR_EXPORT const char * object_name(GLMotor_Object_t *obj)
 
 GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj)
 {
+	if (obj->texture)
+		texture_destroy(obj->texture);
 	glDeleteBuffers(2, obj->ID);
 	free(obj->ID);
 	free(obj->name);
