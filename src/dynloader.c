@@ -315,17 +315,17 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 				}
 				tex = texture_fromcamera(motor, device, width, height, fourcc);
 			}
-			else if (!strncmp(" default", line + 3, 7))
+			else if (!strncmp(" default", next, 7))
 			{
 				next = line + 3;
 				GLubyte pixels[4 * 4] =
 				{
-					255,   0,   0, 255, // Red
-					  0, 255,   0, 255, // Green
-					  0,   0, 255, 255, // Blue
-					255, 255,   0, 255  // Yellow
+					255,   0,   0, // Red
+					  0, 255,   0, // Green
+					  0,   0, 255, // Blue
+					255, 255,   0  // Yellow
 				};
-				tex = texture_create(motor, 2, 2, FOURCC('A', 'B', '2', '4'), 1, pixels);
+				tex = texture_create(motor, 2, 2, FOURCC('R', 'G', '2', '4'), 0, pixels);
 			}
 			else
 			{
@@ -445,4 +445,5 @@ GLMOTOR_EXPORT GLMotor_Texture_t * texture_load(GLMotor_t *motor, char *fileName
 		return texture_loadTGA(motor, fileName);
 	if (!strncmp(fileName + length - 4, ".dds",4))
 		return texture_loadDDS(motor, fileName);
+	return NULL;
 }
