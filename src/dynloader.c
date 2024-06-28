@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <GL/gl.h>
 
@@ -329,10 +330,13 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			}
 			else
 			{
-				tex = texture_load(motor, line + 4);
+				while(isspace(*next)) next++;
+				tex = texture_load(motor, next);
 			}
 			if (tex)
 				object_addtexture(obj, tex);
+			else
+				err("texture \"%s\" not supported", next);
 		}
 	} while (ret != 0);
 	
