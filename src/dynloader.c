@@ -254,11 +254,12 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		else if (! strncmp("usemtl", line, 6))
 		{
 			next = line + 6;
+			while(isspace(*next)) next++;
 			int ret = 0;
 			GLMotor_Texture_t *tex = NULL;
-			if (!strncmp(" v4l2", next, 5))
+			if (!strncmp("v4l2", next, 4))
 			{
-				next = line + 5;
+				next = next + 4;
 				char device[255] = "/dev/video0";
 				GLuint width = 640;
 				GLuint height = 480;
@@ -316,9 +317,8 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 				}
 				tex = texture_fromcamera(motor, device, width, height, fourcc);
 			}
-			else if (!strncmp(" default", next, 7))
+			else if (!strncmp("default", next, 6))
 			{
-				next = line + 3;
 				GLubyte pixels[4 * 4] =
 				{
 					255,   0,   0, // Red
@@ -330,13 +330,12 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			}
 			else
 			{
-				while(isspace(*next)) next++;
 				tex = texture_load(motor, next);
 			}
 			if (tex)
 				object_addtexture(obj, tex);
 			else
-				err("texture \"%s\" not supported", next);
+				err("texture \"%s\" not supported", line + 6);
 		}
 	} while (ret != 0);
 	
