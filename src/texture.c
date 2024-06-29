@@ -181,6 +181,156 @@ struct GLMotor_TextureCamera_s
 static GLint texturecamera_draw(GLMotor_Texture_t *tex);
 static void texturecamera_destroy(GLMotor_Texture_t *tex);
 
+static int camerainit(const char *device, GLuint *width, GLuint *height, GLuint *stride, uint32_t fourcc, int *nbuffers)
+{
+	int fd = open(device, O_RDWR);
+	if (fd < 0)
+		return -1;
+	struct v4l2_capability cap;
+	if (ioctl(fd, VIDIOC_QUERYCAP, &cap))
+		goto camerainit_error;
+	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
+		goto camerainit_error;
+	if (!(cap.capabilities & V4L2_CAP_STREAMING))
+		goto camerainit_error;
+	struct v4l2_fmtdesc ffmt = {0};
+	ffmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	int support_fmt = 0;
+	while (!ioctl(fd, VIDIOC_ENUM_FMT, &ffmt))
+	{
+		if (ffmt.pixelformat == fourcc)
+			support_fmt = 1;
+		ffmt.index++;
+	}
+	if (!support_fmt)
+		err("glmotor: v4l2 %.4s format not supported", (char*)&fourcc);
+	struct v4l2_frmsizeenum fsize = {0};
+	fsize.index = 0;
+	fsize.pixel_format = fourcc;
+	int support_size = 0;
+	while (!ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &fsize))
+	{
+		if (fsize.type == V4L2_FRMSIZE_TYPE_STEPWISE)
+		{
+			if (*width > (fsize.stepwise.max_width))
+				*width = fsize.stepwise.max_width;
+			if (*width < (fsize.stepwise.min_width))
+				*width = fsize.stepwise.min_width;
+			if (*height > (fsize.stepwise.max_height))
+				*height = fsize.stepwise.max_height;
+			if (*height < (fsize.stepwise.min_height))
+				*height = fsize.stepwise.min_height;
+			support_size = 1;
+		}
+		else
+		{
+			dbg("frame size %dx%d", fsize.discrete.width, fsize.discrete.height);
+			if (fsize.discrete.width == *width && fsize.discrete.height == *height)
+				support_size = 1;
+		}
+		fsize.index++;
+	}
+
+	struct v4l2_input input = {0};
+	input.index = 0;
+	while (!ioctl(fd, VIDIOC_ENUMINPUT, &input))
+	{
+		dbg("input name=%s type=%d status=%d std=%lld",
+			   input.name, input.type, input.status, input.std);
+		input.index++;
+	}
+	if (input.index > 0)
+	{
+		int index;
+		if (ioctl(fd, VIDIOC_G_INPUT, &index))
+			goto camerainit_error;
+		dbg("current input index=%d", index);
+	}
+	struct v4l2_format fmt = {0};
+	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	if (ioctl(fd, VIDIOC_G_FMT, &fmt))
+	{
+		err("glmotor: get v4l2 fmt error %m");
+		goto camerainit_error;
+	}
+	dbg("fmt width=%d height=%d pfmt=%.4s",
+		   fmt.fmt.pix.width, fmt.fmt.pix.height, (char*)&fmt.fmt.pix.pixelformat);
+
+	fmt.fmt.pix.width = *width;
+	fmt.fmt.pix.height = *height;
+	fmt.fmt.pix.pixelformat = fourcc;
+	if (ioctl(fd, VIDIOC_S_FMT, &fmt))
+	{
+		err("glmotor: set v4l2 fmt error %m");
+		goto camerainit_error;
+	}
+	/// verify fmt
+	memset(&fmt, 0, sizeof(fmt));
+	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	if (ioctl(fd, VIDIOC_G_FMT, &fmt))
+	{
+		err("glmotor: get v4l2 fmt error %m");
+		goto camerainit_error;
+	}
+	if (fmt.fmt.pix.width != *width)
+	{
+		err("glmotor: bad width %u", fmt.fmt.pix.width);
+		goto camerainit_error;
+	}
+	if (fmt.fmt.pix.height != *height)
+	{
+		err("glmotor: bad height %u", fmt.fmt.pix.height);
+		goto camerainit_error;
+	}
+	if (fmt.fmt.pix.pixelformat != fourcc)
+	{
+		err("glmotor: bad pixelformat %.4s", (char*)&fmt.fmt.pix.pixelformat);
+		goto camerainit_error;
+	}
+	*stride = fmt.fmt.pix.bytesperline;
+
+	struct v4l2_requestbuffers reqbuf;
+	reqbuf.count = *nbuffers;
+	reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	reqbuf.memory = V4L2_MEMORY_MMAP;
+	if (ioctl(fd, VIDIOC_REQBUFS, &reqbuf))
+	{
+		err("glmotor: request v4l2 buffers error %m");
+		goto camerainit_error;
+	}
+	if (reqbuf.count != *nbuffers)
+	{
+		err("glmotor: not enough buffers %u", reqbuf.count);
+		*nbuffers = reqbuf.count;
+	}
+
+	return fd;
+camerainit_error:
+	close(fd);
+	return -1;
+}
+
+static int camerabuffer(int fd, int id)
+{
+	struct v4l2_exportbuffer expbuf = {0};
+	expbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	expbuf.index = id;
+	expbuf.flags = O_CLOEXEC | O_RDWR;
+	if (ioctl(fd, VIDIOC_EXPBUF, &expbuf))
+	{
+		return -1;
+	}
+	struct v4l2_buffer buf = {0};
+	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	buf.index = id;
+	buf.memory = V4L2_MEMORY_MMAP;
+	if (ioctl(fd, VIDIOC_QBUF, &buf))
+	{
+		return -1;
+	}
+	return expbuf.fd;
+}
+
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const char *device, GLuint width, GLuint height, uint32_t fourcc)
 {
 	int nbuffers = MAX_CAMERA_BUFFERS;
@@ -207,132 +357,18 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	if (fourcc == 0)
 		fourcc = FOURCC('A','B','2','4');
 
-	int fd = open(device, O_RDWR);
+	GLuint stride = 0;
+	int fd = camerainit(device, &width, &height, &stride, fourcc, &nbuffers);
 	if (fd < 0)
-		return NULL;
-	struct v4l2_capability cap;
-	if (ioctl(fd, VIDIOC_QUERYCAP, &cap))
-		return NULL;
-	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
-		return NULL;
-	if (!(cap.capabilities & V4L2_CAP_STREAMING))
-		return NULL;
-	struct v4l2_fmtdesc ffmt = {0};
-	ffmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	int support_fmt = 0;
-	while (!ioctl(fd, VIDIOC_ENUM_FMT, &ffmt))
 	{
-		if (ffmt.pixelformat == fourcc)
-			support_fmt = 1;
-		ffmt.index++;
-	}
-	if (!support_fmt)
-		err("glmotor: v4l2 %.4s format not supported", (char*)&fourcc);
-	struct v4l2_frmsizeenum fsize = {0};
-	fsize.index = 0;
-	fsize.pixel_format = fourcc;
-	int support_size = 0;
-	while (!ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &fsize))
-	{
-		if (fsize.type == V4L2_FRMSIZE_TYPE_STEPWISE)
-		{
-			if (width > (fsize.stepwise.max_width))
-				width = fsize.stepwise.max_width;
-			if (width < (fsize.stepwise.min_width))
-				width = fsize.stepwise.min_width;
-			if (height > (fsize.stepwise.max_height))
-				height = fsize.stepwise.max_height;
-			if (height < (fsize.stepwise.min_height))
-				height = fsize.stepwise.min_height;
-			support_size = 1;
-		}
-		else
-		{
-			dbg("frame size %dx%d", fsize.discrete.width, fsize.discrete.height);
-			if (fsize.discrete.width == width && fsize.discrete.height == height)
-				support_size = 1;
-		}
-		fsize.index++;
-	}
-
-	struct v4l2_input input = {0};
-	input.index = 0;
-	while (!ioctl(fd, VIDIOC_ENUMINPUT, &input))
-	{
-		dbg("input name=%s type=%d status=%d std=%lld",
-			   input.name, input.type, input.status, input.std);
-		input.index++;
-	}
-	if (input.index > 0)
-	{
-		int index;
-		if (ioctl(fd, VIDIOC_G_INPUT, &index))
-			return NULL;
-		dbg("current input index=%d", index);
-	}
-	struct v4l2_format fmt = {0};
-	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	if (ioctl(fd, VIDIOC_G_FMT, &fmt))
-	{
-		err("glmotor: get v4l2 fmt error %m");
+		err("glmotor: camera unavailable %m");
 		return NULL;
 	}
-	dbg("fmt width=%d height=%d pfmt=%.4s",
-		   fmt.fmt.pix.width, fmt.fmt.pix.height, (char*)&fmt.fmt.pix.pixelformat);
-
-	fmt.fmt.pix.width = width;
-	fmt.fmt.pix.height = height;
-	fmt.fmt.pix.pixelformat = fourcc;
-	if (ioctl(fd, VIDIOC_S_FMT, &fmt))
-	{
-		err("glmotor: set v4l2 fmt error %m");
-		return NULL;
-	}
-	/// verify fmt
-	memset(&fmt, 0, sizeof(fmt));
-	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	if (ioctl(fd, VIDIOC_G_FMT, &fmt))
-	{
-		err("glmotor: get v4l2 fmt error %m");
-		return NULL;
-	}
-	if (fmt.fmt.pix.width != width)
-	{
-		err("glmotor: bad width %u", fmt.fmt.pix.width);
-		return NULL;
-	}
-	if (fmt.fmt.pix.height != height)
-	{
-		err("glmotor: bad height %u", fmt.fmt.pix.height);
-		return NULL;
-	}
-	if (fmt.fmt.pix.pixelformat != fourcc)
-	{
-		err("glmotor: bad pixelformat %.4s", (char*)&fmt.fmt.pix.pixelformat);
-		return NULL;
-	}
-	GLuint stride = fmt.fmt.pix.bytesperline;
-
-	struct v4l2_requestbuffers reqbuf;
-	reqbuf.count = nbuffers;
-	reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	reqbuf.memory = V4L2_MEMORY_MMAP;
-	if (ioctl(fd, VIDIOC_REQBUFS, &reqbuf))
-	{
-		err("glmotor: request v4l2 buffers error %m");
-		return NULL;
-	}
-	if (reqbuf.count != nbuffers)
-	{
-		err("glmotor: not enough buffers %u", reqbuf.count);
-		return NULL;
-	}
-
-	EGLint *attrib_list;
-	EGLint attrib_list_yuv12[] = {
+	dbg("stride %d", stride);
+	EGLint attrib_list[] = {
 		EGL_WIDTH, width,
 		EGL_HEIGHT, height,
-		EGL_LINUX_DRM_FOURCC_EXT, FOURCC('Y','U','1','2'),
+		EGL_LINUX_DRM_FOURCC_EXT, 0,
 		EGL_DMA_BUF_PLANE0_FD_EXT, 0,
 		EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
 		EGL_DMA_BUF_PLANE0_PITCH_EXT, stride,
@@ -340,32 +376,31 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		EGL_DMA_BUF_PLANE1_OFFSET_EXT, stride * height,
 		EGL_DMA_BUF_PLANE1_PITCH_EXT, stride / 2,
 		EGL_DMA_BUF_PLANE2_FD_EXT, 0,
-		EGL_DMA_BUF_PLANE2_OFFSET_EXT, (stride * height) * 5 / 4 ,
+		EGL_DMA_BUF_PLANE2_OFFSET_EXT, (stride * height) * 3/2,
 		EGL_DMA_BUF_PLANE2_PITCH_EXT, stride / 2,
 		EGL_NONE
 	};
-	EGLint attrib_list_rgb[] = {
-		EGL_WIDTH, width,
-		EGL_HEIGHT, height,
-		EGL_LINUX_DRM_FOURCC_EXT, FOURCC('A','B','2','4'),
-		EGL_DMA_BUF_PLANE0_FD_EXT, 0,
-		EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-		EGL_DMA_BUF_PLANE0_PITCH_EXT, stride,
-		EGL_NONE
-	};
+	attrib_list[5] = fourcc;
 	switch (fourcc)
 	{
 	case FOURCC('Y','U','1','2'):
-		attrib_list = attrib_list_yuv12;
-		attrib_list[5] = fourcc;
+	break;
+	case FOURCC('N','V','1','2'):
+		// semi-planar format
+		attrib_list[18] = EGL_NONE; // only first and second planes
 	break;
 	case FOURCC('Y','U','Y','V'):
-		attrib_list = attrib_list_rgb;
-		attrib_list[11] = width * sizeof(uint32_t);
+		// interleaved format
+		attrib_list[12] = EGL_NONE; // only first plane
+#ifdef FIX_RASPBERRY_YUV
+		// Raspberry PI seems to have some trouble with the PITCH for the YUV formats
+		attrib_list[5] = FOURCC('X','B','2','4');
+		attrib_list[11] = stride  * sizeof(uint32_t);
+#endif
 	break;
 	default:
-		attrib_list = attrib_list_rgb;
-		attrib_list[5] = fourcc;
+		// interleaved format
+		attrib_list[12] = EGL_NONE; // only first plane
 	break;
 	}
 	GLenum texturefamily = GL_TEXTURE_2D;
@@ -374,52 +409,37 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		glEnable(GL_TEXTURE_EXTERNAL_OES);
 		texturefamily = GL_TEXTURE_EXTERNAL_OES;
 	}
+	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 	GLMotor_TextureCameraBuffer_t *textures = calloc(nbuffers, sizeof(GLuint));
 	for (int i = 0; i < nbuffers; i++)
 	{
 		glGenTextures(nbuffers, &textures[i].ID);
-		struct v4l2_exportbuffer expbuf = {0};
-		expbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		expbuf.index = i;
-		expbuf.flags = O_CLOEXEC | O_RDWR;
-		if (ioctl(fd, VIDIOC_EXPBUF, &expbuf))
+		int dmafd = camerabuffer(fd, i);
+		if (dmafd < 0)
+		{
+			nbuffers = i;
+			break;
+		}
+
+		attrib_list[7] = dmafd;
+		attrib_list[13] = dmafd;
+		attrib_list[19] = dmafd;
+		textures[i].image = eglCreateImageKHR(glmotor_egldisplay(motor),
+			EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attrib_list);
+		if (textures[i].image == EGL_NO_IMAGE_KHR)
 		{
 			dbg("%s %d", __FILE__, __LINE__);
 			nbuffers = i;
 			break;
 		}
 
-		attrib_list[7] = expbuf.fd;
-		if (fourcc == FOURCC('Y','U','1','2'))
-		{
-			attrib_list[13] = expbuf.fd;
-			attrib_list[19] = expbuf.fd;
-		}
-		glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 		glBindTexture(texturefamily, textures[i].ID);
-		textures[i].image = eglCreateImageKHR(glmotor_egldisplay(motor),
-			EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attrib_list);
-		if (textures[i].image == EGL_NO_IMAGE_KHR)
-		{
-			nbuffers = i;
-			break;
-		}
-
 		glTexParameteri(texturefamily, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(texturefamily, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glEGLImageTargetTexture2DOES(texturefamily, textures[i].image);
 		eglDestroyImageKHR(glmotor_egldisplay(motor), textures[i].image);
 
-		struct v4l2_buffer buf = {0};
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.index = i;
-		buf.memory = V4L2_MEMORY_MMAP;
-		if (ioctl(fd, VIDIOC_QBUF, &buf))
-		{
-			nbuffers = i;
-			break;
-		}
-		dbg("glmotor: buffer %d queued dmafd %d", i, expbuf.fd);
+		dbg("glmotor: buffer %d queued dmafd %d", i, dmafd);
 	}
 	if (nbuffers == 0)
 	{
@@ -483,7 +503,7 @@ static GLint texturecamera_draw(GLMotor_Texture_t *tex)
 
 static void texturecamera_destroy(GLMotor_Texture_t *tex)
 {
-	GLMotor_TextureCamera_t *camera = tex->private;;
+	GLMotor_TextureCamera_t *camera = tex->private;
 	int a = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	ioctl(camera->fd, VIDIOC_STREAMOFF, &a);
 	close(camera->fd);

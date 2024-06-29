@@ -35,7 +35,7 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 #ifdef HAVE_X11
 		eglnative_x,
 #endif
-#ifdef HAVE_LIBDRM
+#ifdef HAVE_GBM
 		eglnative_drm,
 #endif
 #ifdef HAVE_LIBJPEG
@@ -117,6 +117,7 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 		EGL_GREEN_SIZE, 8,
 		EGL_BLUE_SIZE, 8,
 		EGL_ALPHA_SIZE, 8,
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
 		EGL_NONE
 	};
 	EGLConfig config;
