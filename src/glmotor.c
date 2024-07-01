@@ -125,3 +125,9 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 	motor->programID = programID;
 	return programID;
 }
+
+GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata)
+{
+	motor->eventcb = cb;
+	motor->eventcbdata = cbdata;
+}

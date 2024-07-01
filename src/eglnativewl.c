@@ -216,7 +216,7 @@ static EGLNativeDisplayType native_display()
 	return (EGLNativeDisplayType)display;
 }
 
-static GLboolean native_running(EGLNativeWindowType native_win)
+static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor)
 {
 	struct wl_egl_window *egl_window = (struct wl_egl_window *native_win);
 	wl_display_dispatch_pending(display);

@@ -20,16 +20,65 @@ static void render(void *data)
 	g_angle += M_2_PI / 100;
 	scene_movecamera(scene, g_camera, NULL);
 #endif
-	GLMotor_Object_t *obj = scene_getobject(scene, "object");
-	GLMotor_RotAxis_t rotate = { .X = 0, .Y = 0, .Z = 1, .A = M_PI_4/100 };
-	GLfloat translate[3] = {0.01, 0.01, 0};
-	GLfloat *tr = NULL;
-	//tr = translate;
-	GLMotor_RotAxis_t *rot = NULL;
-	rot = &rotate;
-	object_move(obj, tr, rot);
-
 	scene_draw(scene);
+}
+
+int parseevent(void *data, GLMotor_Event_t *event)
+{
+	GLMotor_Scene_t *scene = (GLMotor_Scene_t *)data;
+	GLMotor_Object_t *obj = scene_getobject(scene, "object");
+	GLMotor_RotAxis_t rotate = { .X = 0, .Y = 0, .Z = 0, .A = M_PI_4/10 };
+	GLfloat translate[3] = {0.0, 0.0, 0};
+	GLfloat *tr = NULL;
+	GLfloat *move = object_positionmatrix(obj);
+	GLMotor_RotAxis_t *rot = NULL;
+	if (event->type == EVT_KEY)
+	{
+		switch (event->data.key.code)
+		{
+		case 0x71:
+			if (event->data.key.mode & MODE_SHIFT)
+				rotate.Y = 1;
+			else if (event->data.key.mode & MODE_CTRL)
+				rotate.Z = 1;
+			else
+				translate[0] = -0.1;
+		break;
+		case 0x72:
+			rotate.A = -rotate.A;
+			if (event->data.key.mode & MODE_SHIFT)
+				rotate.Y = 1;
+			else if (event->data.key.mode & MODE_CTRL)
+				rotate.Z = 1;
+			else
+				translate[0] = 0.1;
+		break;
+		case 0x6F:
+			if (event->data.key.mode & MODE_SHIFT)
+				rotate.X = 1;
+			else if (event->data.key.mode & MODE_CTRL)
+				translate[2] = 0.1;
+			else
+				translate[1] = 0.1;
+		break;
+		case 0x74:
+			rotate.A = -rotate.A;
+			rotate.X = 1;
+			if (event->data.key.mode & MODE_SHIFT)
+				rotate.X = 1;
+			else if (event->data.key.mode & MODE_CTRL)
+				translate[2] = -0.1;
+			else
+				translate[1] = -0.1;
+		break;
+		}
+		if (rotate.X || rotate.Y || rotate.Z)
+			rot = &rotate;
+		tr = translate;
+	}
+	if (rot || tr)
+		object_move(obj, tr, rot);
+	return 0;
 }
 
 GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name)
@@ -116,6 +165,7 @@ int main(int argc, char** argv)
 	{
 		scene_appendobject(scene, obj);
 	}
+	glmotor_seteventcb(motor, parseevent, scene);
 	glmotor_run(motor, render, scene);
 	scene_destroy(scene);
 	glmotor_destroy(motor);

@@ -14,6 +14,7 @@
 #include <gbm.h>
 
 #include "log.h"
+#include "glmotor.h"
 #include "eglnative.h"
 
 static int running = 1;
@@ -240,7 +241,7 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLu
 	return (EGLNativeWindowType) gbm.surface;
 }
 
-static GLboolean native_running(EGLNativeWindowType native_win)
+static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor)
 {
 	struct gbm_surface *surface = (struct gbm_surface *)native_win;
 

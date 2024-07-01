@@ -22,6 +22,31 @@ struct GLMotor_list_s
 	GLMotor_list_t *next;
 };
 
+typedef struct GLMotor_Event_s GLMotor_Event_t;
+typedef enum
+{
+	MODE_SHIFT = 0x01,
+	MODE_CTRL = 0x02,
+	MODE_ALT = 0x04,
+} GLMotor_Event_Keymode_t;
+struct GLMotor_Event_s
+{
+	enum{
+		EVT_KEY,
+	} type;
+	union{
+		struct
+		{
+			GLMotor_Event_Keymode_t mode;
+			int code;
+			char value;
+		}key;
+	} data;
+	GLMotor_Event_t *next;
+};
+
+typedef int (*GLMotor_Event_func_t)(void *cbdata, GLMotor_Event_t *event);
+
 typedef struct GLMotor_s GLMotor_t;
 struct GLMotor_s
 {
@@ -29,6 +54,9 @@ struct GLMotor_s
 	GLMotor_Surface_t *surf;
 	GLuint width;
 	GLuint height;
+	GLMotor_Event_func_t eventcb;
+	void *eventcbdata;
+	GLMotor_Event_t *events;
 };
 
 typedef struct GLMotor_RotAxis_s GLMotor_RotAxis_t;
@@ -42,6 +70,7 @@ struct GLMotor_RotAxis_s
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv);
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertex, GLuint vertexSize, GLchar *fragment, GLuint fragmentSize);
+GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata);
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata);
 GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor);
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor);
@@ -63,6 +92,7 @@ GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloa
 GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals, GLfloat normals[]);
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex);
 GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra);
+GLMOTOR_EXPORT GLfloat* object_positionmatrix(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT const char * object_name(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj);

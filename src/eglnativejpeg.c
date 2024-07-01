@@ -19,7 +19,7 @@ static EGLNativeDisplayType native_display()
 	return (EGLNativeDisplayType)EGL_DEFAULT_DISPLAY;
 }
 
-static GLboolean native_running(EGLNativeWindowType native_win)
+static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor)
 {
 	unsigned char *buffer =
 		(unsigned char *)malloc(g_width * g_height * COLOR_COMPONENTS);

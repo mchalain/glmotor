@@ -173,6 +173,8 @@ static void mat4_multiply4(GLfloat A[], GLfloat B[], GLfloat AB[])
 
 	memcpy(AB, TMP, sizeof(TMP));
 }
+
+#if 0
 static void mat4_log(GLfloat mat[])
 {
 	for (int i = 0; i < 4; i++)
@@ -185,6 +187,7 @@ static void mat4_log(GLfloat mat[])
 		);
 	}
 }
+#endif
 
 GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra)
 {
@@ -226,6 +229,11 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMo
 		obj->move[ 7] += translate[1];
 		obj->move[11] += translate[2];
 	}
+}
+
+GLMOTOR_EXPORT GLfloat* object_positionmatrix(GLMotor_Object_t *obj)
+{
+	return obj->move;
 }
 
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex)
@@ -289,7 +297,7 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
 	}
 	GLuint moveID = glGetUniformLocation(motor->programID, "vMove");
-	glUniformMatrix4fv(moveID, 1, GL_FALSE, obj->move);
+	glUniformMatrix4fv(moveID, 1, GL_TRUE, &obj->move[0]);
 
 	if (obj->texture)
 		ret = texture_draw(obj->texture);

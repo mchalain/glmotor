@@ -1,8 +1,10 @@
+#include <stdlib.h>
 #include <string.h>
 #include <GL/gl.h>
 #include <EGL/egl.h>
 
 #include "log.h"
+#include "glmotor.h"
 #include "eglnative.h"
 
 #include  <X11/Xlib.h>
@@ -25,15 +27,16 @@ static EGLNativeDisplayType native_display()
 	return (EGLNativeDisplayType)display;
 }
 
-static GLboolean native_running(EGLNativeWindowType native_win)
+static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor)
 {
 	XEvent xev;
 	KeySym key;
 	GLboolean running = GL_TRUE;
-	char text;
+	static GLMotor_Event_Keymode_t mode = 0;
 
 	while (XPending(display))
 	{
+		char text = 0;
 		XNextEvent(display, &xev);
 		if (xev.type == KeyPress)
 		{
@@ -42,8 +45,29 @@ static GLboolean native_running(EGLNativeWindowType native_win)
 				if (text == 'q')
 					running = GL_FALSE;
 			}
-			if (xev.xkey.keycode == 0x09)
+			if (xev.xkey.keycode == 0x32)
+				mode |= MODE_SHIFT;
+			else if (xev.xkey.keycode == 0x25)
+				mode |= MODE_CTRL;
+			else if (xev.xkey.keycode == 0x09)
 				running = GL_FALSE;
+			else
+			{
+				GLMotor_Event_t *evt = calloc(1, sizeof(*evt));
+				evt->type = EVT_KEY;
+				evt->data.key.mode = mode;
+				evt->data.key.code = xev.xkey.keycode;
+				evt->data.key.value = text;
+				evt->next = motor->events;
+				motor->events = evt;
+			}
+		}
+		if (xev.type == KeyRelease)
+		{
+			if (xev.xkey.keycode == 0x32)
+				mode &= ~MODE_SHIFT;
+			if (xev.xkey.keycode == 0x25)
+				mode &= ~MODE_CTRL;
 		}
 		if ( xev.type == DestroyNotify )
 			running = GL_FALSE;
@@ -57,7 +81,7 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLu
 	Window root = DefaultRootWindow(display);
 
 	XSetWindowAttributes swa;
-	swa.event_mask  =  ExposureMask | PointerMotionMask | KeyPressMask;
+	swa.event_mask  =  ExposureMask | PointerMotionMask | KeyPressMask | KeyReleaseMask;
 	Window win;
 	win = XCreateWindow(
 				display, root,

@@ -164,8 +164,15 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 	do
 	{
 		eglSwapBuffers(egl_display, motor->surf->egl_surface);
+		if (motor->eventcb && motor->events)
+		{
+			GLMotor_Event_t *evt = NULL;
+			for (evt = motor->events; evt != NULL; evt = evt->next)
+				motor->eventcb(motor->eventcbdata, evt);
+			motor->events = evt;
+		}
 		draw(drawdata);
-	} while (native->running(motor->surf->native_win));
+	} while (native->running(motor->surf->native_win, motor));
 	return 0;
 }
 
