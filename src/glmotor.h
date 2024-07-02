@@ -102,6 +102,8 @@ GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex);
 GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_TrAxis_t *tr, GLMotor_RotAxis_t *ra);
 GLMOTOR_EXPORT GLfloat* object_positionmatrix(GLMotor_Object_t *obj);
+GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_TrAxis_t **tr, GLMotor_RotAxis_t **ra);
+GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_TrAxis_t *tr, GLMotor_RotAxis_t *ra);
 GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT const char * object_name(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj);

@@ -20,6 +20,14 @@
 /***********************************************************************
  * GLMotor_Object_t
  **********************************************************************/
+typedef struct GLMotor_Kinematic_s GLMotor_Kinematic_t;
+struct GLMotor_Kinematic_s
+{
+	GLMotor_TrAxis_t tr;
+	GLMotor_RotAxis_t ra;
+	GLMotor_Kinematic_t *next;
+};
+
 struct GLMotor_Object_s
 {
 	GLMotor_t *motor;
@@ -41,6 +49,8 @@ struct GLMotor_Object_s
 	GLuint ncolors;
 	GLuint nuvs;
 	GLuint nnormals;
+
+	GLMotor_Kinematic_t *kinematic;
 };
 
 GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *name, GLuint maxpoints, GLuint maxfaces)
@@ -242,6 +252,35 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_TrAxis_t *tr, GLM
 GLMOTOR_EXPORT GLfloat* object_positionmatrix(GLMotor_Object_t *obj)
 {
 	return obj->move;
+}
+
+GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_TrAxis_t **tr, GLMotor_RotAxis_t **ra)
+{
+	GLMotor_Kinematic_t *kin = obj->kinematic;
+	if (kin == NULL)
+		return -1;
+	GLMotor_Kinematic_t *last = obj->kinematic;
+	while (last->next != NULL) last = last->next;
+	kin->next = NULL;
+	if (last != obj->kinematic)
+	{
+		last->next = kin;
+		obj->kinematic = obj->kinematic->next;
+	}
+	*tr = &kin->tr;
+	*ra = &kin->ra;
+	return 0;
+}
+
+GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_TrAxis_t *tr, GLMotor_RotAxis_t *ra)
+{
+	GLMotor_Kinematic_t *kin = calloc(1, sizeof(*kin));
+	if (tr)
+		memcpy(&kin->tr, tr, sizeof(kin->tr));
+	if (ra)
+		memcpy(&kin->ra, ra, sizeof(kin->ra));
+	kin->next = obj->kinematic;
+	obj->kinematic = kin;
 }
 
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex)

@@ -20,6 +20,11 @@ static void render(void *data)
 	g_angle += M_2_PI / 100;
 	scene_movecamera(scene, g_camera, NULL);
 #endif
+	GLMotor_Object_t *obj = scene_getobject(scene, "object");
+	GLMotor_RotAxis_t *rot = NULL;
+	GLMotor_TrAxis_t *tr = NULL;
+	object_kinematic(obj, &tr, &rot);
+	object_move(obj, tr, rot);
 	scene_draw(scene);
 }
 
@@ -167,7 +172,12 @@ int main(int argc, char** argv)
 	{
 		scene_appendobject(scene, obj);
 	}
+#if 0
 	glmotor_seteventcb(motor, parseevent, scene);
+#else
+	GLMotor_RotAxis_t rotate = { .X = 0, .Y = 0, .Z = 1, .A = M_PI_4/10 };
+	object_appendkinematic(obj, NULL, &rotate);
+#endif
 	glmotor_run(motor, render, scene);
 	scene_destroy(scene);
 	glmotor_destroy(motor);
