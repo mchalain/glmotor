@@ -191,6 +191,7 @@ static void mat4_log(GLfloat mat[])
 
 GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra)
 {
+	// The matrix is inversed
 	if (ra)
 	{
 		GLfloat sin_a = sin(ra->A / 2);
@@ -207,14 +208,14 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMo
 
 		GLfloat mq[16];
 		mq[0]  = 1 - 2 * ( yy + zz );
-		mq[1]  =     2 * ( xy - zw );
-		mq[2]  =     2 * ( xz + yw );
+		mq[1]  =     2 * ( xy + zw );
+		mq[2]  =     2 * ( xz - yw );
 
-		mq[4]  =     2 * ( xy + zw );
+		mq[4]  =     2 * ( xy - zw );
 		mq[5]  = 1 - 2 * ( xx + zz );
-		mq[6]  =     2 * ( yz - xw );
+		mq[6]  =     2 * ( xz + yw );
 
-		mq[8]  =     2 * ( xz - yw );
+		mq[8]  =     2 * ( yz - xw );
 		mq[9]  =     2 * ( yz + xw );
 		mq[10] = 1 - 2 * ( xx + yy );
 
@@ -225,9 +226,9 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMo
 	}
 	if (translate)
 	{
-		obj->move[ 3] += translate[0];
-		obj->move[ 7] += translate[1];
-		obj->move[11] += translate[2];
+		obj->move[12] += translate[0];
+		obj->move[13] += translate[1];
+		obj->move[14] += translate[2];
 	}
 }
 
@@ -297,7 +298,7 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
 	}
 	GLuint moveID = glGetUniformLocation(motor->programID, "vMove");
-	glUniformMatrix4fv(moveID, 1, GL_TRUE, &obj->move[0]);
+	glUniformMatrix4fv(moveID, 1, GL_FALSE, &obj->move[0]);
 
 	if (obj->texture)
 		ret = texture_draw(obj->texture);
