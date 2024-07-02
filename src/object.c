@@ -189,7 +189,12 @@ static void mat4_log(GLfloat mat[])
 }
 #endif
 
-GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra)
+float squaref(float value)
+{
+	return value * value;
+}
+
+GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_TrAxis_t *tr, GLMotor_RotAxis_t *ra)
 {
 	// The matrix is inversed
 	if (ra)
@@ -224,11 +229,13 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMo
 
 		mat4_multiply4(mq, obj->move, obj->move);
 	}
-	if (translate)
+	if (tr && tr->L != 0)
 	{
-		obj->move[12] += translate[0];
-		obj->move[13] += translate[1];
-		obj->move[14] += translate[2];
+		if (tr->X + tr->Y + tr->Z != 1)
+			tr->L /= sqrtf(squaref(tr->X) + squaref(tr->Y) + squaref(tr->Z));
+		obj->move[12] += tr->X * tr->L;
+		obj->move[13] += tr->Y * tr->L;
+		obj->move[14] += tr->Z * tr->L;
 	}
 }
 

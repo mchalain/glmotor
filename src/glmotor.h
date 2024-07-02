@@ -68,6 +68,15 @@ struct GLMotor_RotAxis_s
 	GLfloat Z;
 };
 
+typedef struct GLMotor_TrAxis_s GLMotor_TrAxis_t;
+struct GLMotor_TrAxis_s
+{
+	GLfloat L;
+	GLfloat X;
+	GLfloat Y;
+	GLfloat Z;
+};
+
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv);
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertex, GLuint vertexSize, GLchar *fragment, GLuint fragmentSize);
 GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata);
@@ -91,7 +100,7 @@ GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, 
 GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloat uvs[]);
 GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals, GLfloat normals[]);
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex);
-GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLfloat translate[], GLMotor_RotAxis_t *ra);
+GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_TrAxis_t *tr, GLMotor_RotAxis_t *ra);
 GLMOTOR_EXPORT GLfloat* object_positionmatrix(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT const char * object_name(GLMotor_Object_t *obj);
