@@ -23,8 +23,10 @@
 typedef struct GLMotor_Kinematic_s GLMotor_Kinematic_t;
 struct GLMotor_Kinematic_s
 {
-	GLMotor_TrAxis_t tr;
-	GLMotor_RotAxis_t ra;
+	GLMotor_Translate_t tr;
+	GLMotor_Rotate_t rot;
+	int repeats;
+	int rest;
 	GLMotor_Kinematic_t *next;
 };
 
@@ -38,7 +40,6 @@ struct GLMotor_Object_s
 	GLuint maxfaces;
 	GLuint npoints;
 	GLuint nfaces;
-	GLMotor_Texture_t *texture;
 
 	GLfloat move[16];
 	GLfloat defaultcolor[4];
@@ -51,6 +52,7 @@ struct GLMotor_Object_s
 	GLuint nnormals;
 
 	GLMotor_Kinematic_t *kinematic;
+	GLMotor_Texture_t *texture;
 };
 
 GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *name, GLuint maxpoints, GLuint maxfaces)
@@ -197,6 +199,8 @@ static void mat4_log(GLfloat mat[])
 		);
 	}
 }
+#else
+#define mat4_log(...)
 #endif
 
 float squaref(float value)
@@ -204,82 +208,126 @@ float squaref(float value)
 	return value * value;
 }
 
-GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_TrAxis_t *tr, GLMotor_RotAxis_t *ra)
+float normalizef(float u, float v, float w)
+{
+	return sqrtf(squaref(u) + squaref(v) + squaref(w));
+}
+
+void ra2mq(GLMotor_RotAxis_t *ra, GLfloat mq[])
+{
+	GLfloat rcos = cos(ra->A);
+	GLfloat ircos = 1 - rcos;
+	GLfloat rsin = sin(ra->A);
+	GLfloat xx = squaref(ra->X);
+	GLfloat yy = squaref(ra->Y);
+	GLfloat zz = squaref(ra->Z);
+	GLfloat xy = ra->X * ra->Y;
+	GLfloat xz = ra->X * ra->Z;
+	GLfloat yz = ra->Y * ra->Z;
+
+	mq[ 0] =          rcos + xx * ircos;
+	mq[ 4] =  ra->Z * rsin + xy * ircos;
+	mq[ 8] = -ra->Y * rsin + yz * ircos;
+
+	mq[ 1] = -ra->Z * rsin + xy * ircos;
+	mq[ 5] =          rcos + yy * ircos;
+	mq[ 9] =  ra->X * rsin + yz * ircos;
+
+	mq[ 2] =  ra->Y * rsin + xz * ircos;
+	mq[ 6] = -ra->X * rsin + yz * ircos;
+	mq[10] =          rcos + zz * ircos;
+
+	mq[3]  = mq[7] = mq[11] = mq[12] = mq[13] = mq[14] = 0;
+	mq[15] = 1;
+}
+
+GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, GLMotor_Rotate_t *rot)
 {
 	// The matrix is inversed
-	if (ra)
+	if (rot && rot->mq[15] == 0)
 	{
-		GLfloat sin_a = sin(ra->A / 2);
-		GLfloat cos_a = cos(ra->A / 2);
-		GLfloat xx = (ra->X  * sin_a) * (ra->X  * sin_a);
-		GLfloat xy = (ra->X  * sin_a) * (ra->Y  * sin_a);
-		GLfloat xz = (ra->X  * sin_a) * (ra->Z  * sin_a);
-		GLfloat xw = (ra->X  * sin_a) * (cos_a);
-		GLfloat yy = (ra->Y  * sin_a) * (ra->Y  * sin_a);
-		GLfloat yz = (ra->Y  * sin_a) * (ra->Z  * sin_a);
-		GLfloat yw = (ra->Y  * sin_a) * (cos_a);
-		GLfloat zz = (ra->Z  * sin_a) * (ra->Z  * sin_a);
-		GLfloat zw = (ra->Z  * sin_a) * (cos_a);
-
+		GLMotor_RotAxis_t *ra = &rot->ra;
 		GLfloat mq[16];
-		mq[0]  = 1 - 2 * ( yy + zz );
-		mq[1]  =     2 * ( xy + zw );
-		mq[2]  =     2 * ( xz - yw );
-
-		mq[4]  =     2 * ( xy - zw );
-		mq[5]  = 1 - 2 * ( xx + zz );
-		mq[6]  =     2 * ( xz + yw );
-
-		mq[8]  =     2 * ( yz - xw );
-		mq[9]  =     2 * ( yz + xw );
-		mq[10] = 1 - 2 * ( xx + yy );
-
-		mq[3]  = mq[7] = mq[11] = mq[12] = mq[13] = mq[14] = 0;
-		mq[15] = 1;
-
-		mat4_multiply4(mq, obj->move, obj->move);
+		ra2mq(ra, mq);
+		mat4_multiply4(obj->move, mq, obj->move);
+	}
+	else if (rot)
+	{
+		mat4_multiply4(obj->move, rot->mq, obj->move);
 	}
 	if (tr && tr->L != 0)
 	{
 		if (tr->X + tr->Y + tr->Z != 1)
-			tr->L /= sqrtf(squaref(tr->X) + squaref(tr->Y) + squaref(tr->Z));
+			tr->L /= normalizef(tr->X, tr->Y, tr->Z);
 		obj->move[12] += tr->X * tr->L;
 		obj->move[13] += tr->Y * tr->L;
 		obj->move[14] += tr->Z * tr->L;
 	}
 }
 
-GLMOTOR_EXPORT GLfloat* object_positionmatrix(GLMotor_Object_t *obj)
+GLMOTOR_EXPORT const GLfloat* object_positionmatrix(GLMotor_Object_t *obj)
 {
 	return obj->move;
 }
 
-GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_TrAxis_t **tr, GLMotor_RotAxis_t **ra)
+GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t **tr, GLMotor_Rotate_t **rot)
 {
 	GLMotor_Kinematic_t *kin = obj->kinematic;
 	if (kin == NULL)
 		return -1;
-	GLMotor_Kinematic_t *last = obj->kinematic;
-	while (last->next != NULL) last = last->next;
-	kin->next = NULL;
-	if (last != obj->kinematic)
+	kin->rest--;
+	if (kin->rest == 0)
 	{
-		last->next = kin;
-		obj->kinematic = obj->kinematic->next;
+		if (kin->repeats > 0)
+		{
+			obj->kinematic = obj->kinematic->next;
+			free(kin);
+			return -1;
+		}
+		GLMotor_Kinematic_t *last = obj->kinematic;
+		while (last->next != NULL) last = last->next;
+		if (last != obj->kinematic)
+		{
+			last->next = kin;
+			obj->kinematic = obj->kinematic->next;
+		}
+		kin->next = NULL;
+		kin->rest = -kin->repeats;
+		kin = obj->kinematic;
 	}
-	*tr = &kin->tr;
-	*ra = &kin->ra;
+	if (kin->rest > 0)
+	{
+		*tr = &kin->tr;
+		*rot = &kin->rot;
+		return 1;
+	}
 	return 0;
 }
 
-GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_TrAxis_t *tr, GLMotor_RotAxis_t *ra)
+/**
+ * @brief add movement to play during drawing
+ *
+ * @param obj the object to affect
+ * @param tr  the translacion vertex
+ * @param rot the quaternion matrix or the couple vertex + angle
+ * @param repeats the number of time to repeat the movement, minus value will push the movement to the end of kinematic list to repeat again
+ */
+GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, GLMotor_Rotate_t *rot, int repeats)
 {
 	GLMotor_Kinematic_t *kin = calloc(1, sizeof(*kin));
 	if (tr)
 		memcpy(&kin->tr, tr, sizeof(kin->tr));
-	if (ra)
-		memcpy(&kin->ra, ra, sizeof(kin->ra));
+	if (rot && rot->mq[15] == 0)
+	{
+		ra2mq(&rot->ra, kin->rot.mq);
+	}
+	else if (rot)
+	{
+		memcpy(kin->rot.mq, rot->mq, sizeof(kin->rot.mq));
+	}
 	kin->next = obj->kinematic;
+	kin->rest = kin->repeats = repeats;
+	kin->rest *= (kin->repeats < 0)? -1: 1;
 	obj->kinematic = kin;
 }
 

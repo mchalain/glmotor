@@ -21,10 +21,12 @@ static void render(void *data)
 	scene_movecamera(scene, g_camera, NULL);
 #endif
 	GLMotor_Object_t *obj = scene_getobject(scene, "object");
-	GLMotor_RotAxis_t *rot = NULL;
-	GLMotor_TrAxis_t *tr = NULL;
-	object_kinematic(obj, &tr, &rot);
-	object_move(obj, tr, rot);
+	GLMotor_Rotate_t *rot = NULL;
+	GLMotor_Translate_t *tr = NULL;
+	if (object_kinematic(obj, &tr, &rot) != -1)
+	{
+		object_move(obj, tr, rot);
+	}
 	scene_draw(scene);
 }
 
@@ -32,53 +34,54 @@ int parseevent(void *data, GLMotor_Event_t *event)
 {
 	GLMotor_Scene_t *scene = (GLMotor_Scene_t *)data;
 	GLMotor_Object_t *obj = scene_getobject(scene, "object");
-	GLMotor_RotAxis_t rotate = { .X = 0, .Y = 0, .Z = 0, .A = M_PI_4/10 };
-	GLMotor_RotAxis_t *rot = NULL;
-	GLMotor_TrAxis_t translate = {.X = 0.0, .Y = 0.0, .Z = 0.0, .L = 0.01};
-	GLMotor_TrAxis_t *tr = NULL;
-	GLfloat *move = object_positionmatrix(obj);
+	GLMotor_Rotate_t rotate = { 0 };
+	rotate.ra.X = 0; rotate.ra.Y = 0; rotate.ra.Z = 0; rotate.ra.A = M_PI_4/100;
+	GLMotor_Rotate_t *rot = NULL;
+	GLMotor_Translate_t translate = {.X = 0.0, .Y = 0.0, .Z = 0.0, .L = 0.01};
+	GLMotor_Translate_t *tr = NULL;
+	//const GLfloat *move = object_positionmatrix(obj);
 	if (event->type == EVT_KEY)
 	{
 		switch (event->data.key.code)
 		{
 		case 0x71:
 			if (event->data.key.mode & MODE_SHIFT)
-				rotate.Y = 1;
+				rotate.ra.Y = 1;
 			else if (event->data.key.mode & MODE_CTRL)
-				rotate.Z = 1;
+				rotate.ra.Z = 1;
 			else
 				translate.X = 1;
 		break;
 		case 0x72:
-			rotate.A = -rotate.A;
+			rotate.ra.A *= -1;
 			translate.L = - translate.L;
 			if (event->data.key.mode & MODE_SHIFT)
-				rotate.Y = 1;
+				rotate.ra.Y = 1;
 			else if (event->data.key.mode & MODE_CTRL)
-				rotate.Z = 1;
+				rotate.ra.Z = 1;
 			else
 				translate.X = 1;
 		break;
 		case 0x6F:
 			if (event->data.key.mode & MODE_SHIFT)
-				rotate.X = 1;
+				rotate.ra.X = 1;
 			else if (event->data.key.mode & MODE_CTRL)
 				translate.Z = 1;
 			else
 				translate.Y = 1;
 		break;
 		case 0x74:
-			rotate.A = -rotate.A;
-			translate.L = - translate.L;
+			rotate.ra.A *= -1;
+			translate.L *= -1;
 			if (event->data.key.mode & MODE_SHIFT)
-				rotate.X = 1;
+				rotate.ra.X = 1;
 			else if (event->data.key.mode & MODE_CTRL)
 				translate.Z = 1;
 			else
 				translate.Y = 1;
 		break;
 		}
-		if (rotate.X || rotate.Y || rotate.Z)
+		if (rotate.ra.X || rotate.ra.Y || rotate.ra.Z)
 			rot = &rotate;
 		if (translate.X || translate.Y || translate.Z)
 			tr = &translate;
@@ -175,8 +178,16 @@ int main(int argc, char** argv)
 #if 0
 	glmotor_seteventcb(motor, parseevent, scene);
 #else
-	GLMotor_RotAxis_t rotate = { .X = 0, .Y = 0, .Z = 1, .A = M_PI_4/10 };
-	object_appendkinematic(obj, NULL, &rotate);
+	GLMotor_Rotate_t rotate = { 0 };
+	rotate.ra.X = 0; rotate.ra.Y = 0; rotate.ra.Z = 1; rotate.ra.A = M_PI_4/100;
+	object_appendkinematic(obj, NULL, NULL, -50);
+	object_appendkinematic(obj, NULL, &rotate, -100);
+	object_appendkinematic(obj, NULL, NULL, -50);
+	rotate.ra.A *= -1;
+	object_appendkinematic(obj, NULL, &rotate, -100);
+	object_appendkinematic(obj, NULL, NULL, 50);
+	rotate.ra.A *= -1;
+	object_appendkinematic(obj, NULL, &rotate, 50);
 #endif
 	glmotor_run(motor, render, scene);
 	scene_destroy(scene);
