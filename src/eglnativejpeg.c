@@ -26,16 +26,45 @@ static EGLNativeDisplayType native_display()
 
 static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor)
 {
+	struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+
+	fd_set fds;
+	FD_ZERO(&fds);
+	FD_SET(0, &fds);
+
+	int ret = select(1, &fds, NULL, NULL, &tv);
+	if (ret < 0) {
+		err("glmotor: select err: %m");
+		return 0;
+	} else if (ret == 0) {
+		return 1;
+	} else if (FD_ISSET(0, &fds)) {
+		char c = 0;
+		if (read(0, &c, 1) > 0)
+		{
+			GLMotor_Event_t *evt = calloc(1, sizeof(*evt));
+			evt->type = EVT_KEY;
+			evt->data.key.mode = 0;
+			evt->data.key.code = 0;
+			evt->data.key.value = c;
+			evt->next = motor->events;
+			motor->events = evt;
+		}
+		warn("user interrupted!");
+	}
+
 	unsigned char *buffer =
 		(unsigned char *)malloc(g_width * g_height * COLOR_COMPONENTS);
 
 	GLuint components = (COLOR_COMPONENTS == 3)?GL_RGB : GL_RGBA;
-    glReadPixels(0, 0, g_width, g_height, components, GL_UNSIGNED_BYTE,
-                 buffer);
+	glReadPixels(0, 0, g_width, g_height, components, GL_UNSIGNED_BYTE,
+				 buffer);
 
-    FILE *output = fopen("screen.jpg", "wb");
-    if (output)
-    {
+	FILE *output = fopen("screen.jpg", "wb");
+	if (output)
+	{
 		struct jpeg_compress_struct cinfo;
 		struct jpeg_error_mgr jerr;
 
@@ -56,12 +85,13 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 			jpeg_write_scanlines(&cinfo, row_pointer, 1);
 		}
 		jpeg_finish_compress(&cinfo);
-        fclose(output);
-    }
-    else
-    {
-        err("glmotor:Failed to open file screen.raw for writing!");
-    }
+		fclose(output);
+	}
+	else
+	{
+		err("glmotor:Failed to open file screen.raw for writing!");
+	}
+	free(buffer);
 	return 0;
 }
 

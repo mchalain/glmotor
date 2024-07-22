@@ -229,7 +229,6 @@ static EGLNativeDisplayType native_display()
 	return (EGLNativeDisplayType)gbm.dev;
 }
 
-static struct gbm_bo *old_bo = NULL;
 static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint width, GLuint height, const GLchar *name)
 {
 	struct gbm_device *dev = (struct gbm_device *)display;
@@ -248,6 +247,7 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLu
 
 static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor)
 {
+	static struct gbm_bo *old_bo = NULL;
 	struct gbm_surface *surface = (struct gbm_surface *)native_win;
 
 	if (old_bo == NULL)
@@ -290,11 +290,22 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 		ret = select(drm.fd + 1, &fds, NULL, NULL, NULL);
 		if (ret < 0) {
 			err("glmotor: select err: %m");
-			return ret;
+			return 0;
 		} else if (ret == 0) {
 			warn("select timeout!");
-			return -1;
+			return 0;
 		} else if (FD_ISSET(0, &fds)) {
+			char c = 0;
+			if (read(0, &c, 1) > 0)
+			{
+				GLMotor_Event_t *evt = calloc(1, sizeof(*evt));
+				evt->type = EVT_KEY;
+				evt->data.key.mode = 0;
+				evt->data.key.code = 0;
+				evt->data.key.value = c;
+				evt->next = motor->events;
+				motor->events = evt;
+			}
 			warn("user interrupted!");
 			break;
 		}
