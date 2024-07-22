@@ -1,50 +1,16 @@
 #include <stddef.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifdef HAVE_GLESV2
 # error "glut doesn't support gles"
 #endif
-#ifdef HAVE_GLEW
-# include <GL/glew.h>
-#endif
+#include <GL/gl.h>
 #include <GL/freeglut.h>
 
 #define GLMOTOR_SURFACE_S struct GLMotor_Surface_s
 #include "glmotor.h"
 #include "log.h"
-
-#ifdef HAVE_GLEW
-static int init_glew()
-{
-	if ( glewInit() != GLEW_OK )
-	{
-	    err("glmotor: glewInit error %m");
-	    return -1;
-	}
-
-	if ( !glewIsSupported("GL_ARB_shading_language_100") )
-	{
-	    err("glmotor: GL_ARB_shading_language_100 error %m");
-		return -2;
-	}
-	if ( !glewIsSupported("GL_ARB_shader_objects") )
-	{
-	    err("glmotor: GL_ARB_shader_objects error %m");
-		return -3;
-	}
-	if ( !glewIsSupported("GL_ARB_vertex_shader") )
-	{
-	    err("glmotor: GL_ARB_vertex_shader error %m");
-		return -4;
-	}
-	if ( !glewIsSupported("GL_ARB_fragment_shader") )
-	{
-	    err("glmotor: GL_ARB_fragment_shader error %m");
-		return -5;
-	}
-	return 0;
-}
-#endif
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 {
@@ -79,10 +45,6 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE |GLUT_DEPTH);
 
 	glutCreateWindow(name);
-#ifdef HAVE_GLEW
-	if (init_glew())
-		return NULL;
-#endif
 
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
 	motor->width = width;

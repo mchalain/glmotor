@@ -3,50 +3,13 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#ifndef HAVE_GLEW
-# include <GL/gl.h>
-#else
-# include <GL/glew.h>
-#endif
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
 #define GLMOTOR_SURFACE_S GLFWwindow
 #include "glmotor.h"
 
 #include "log.h"
-
-#ifdef HAVE_GLEW
-static int init_glew()
-{
-	if ( glewInit() != GLEW_OK )
-	{
-	    err("glmotor: glewInit error %m");
-	    return -1;
-	}
-
-	if ( !glewIsSupported("GL_ARB_shading_language_100") )
-	{
-	    err("glmotor: GL_ARB_shading_language_100 error %m");
-		return -2;
-	}
-	if ( !glewIsSupported("GL_ARB_shader_objects") )
-	{
-	    err("glmotor: GL_ARB_shader_objects error %m");
-		return -3;
-	}
-	if ( !glewIsSupported("GL_ARB_vertex_shader") )
-	{
-	    err("glmotor: GL_ARB_vertex_shader error %m");
-		return -4;
-	}
-	if ( !glewIsSupported("GL_ARB_fragment_shader") )
-	{
-	    err("glmotor: GL_ARB_fragment_shader error %m");
-		return -5;
-	}
-	return 0;
-}
-#endif
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 {
@@ -93,11 +56,6 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 		glfwTerminate();
 	}
 	glfwMakeContextCurrent(window);
-#ifdef HAVE_GLEW
-	glewExperimental = true;
-	if (init_glew())
-		return NULL;
-#endif
 
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
 	motor->width = width;
@@ -123,7 +81,8 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 
 GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
 {
-	return glfwSwapBuffers(motor->surf);
+	glfwSwapBuffers(motor->surf);
+	return 0;
 }
 
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)

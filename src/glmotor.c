@@ -4,8 +4,12 @@
 
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
+# undef HAVE_GLEW
 #else
+#ifdef HAVE_GLEW
 # include <GL/glew.h>
+#endif
+# include <GL/gl.h>
 #endif
 #ifdef HAVE_GLU
 #include <GL/glu.h>
@@ -13,6 +17,39 @@
 
 #include "glmotor.h"
 #include "log.h"
+
+#ifdef HAVE_GLEW
+static int init_glew()
+{
+	if ( glewInit() != GLEW_OK )
+	{
+	    err("glmotor: glewInit error %m");
+	    return -1;
+	}
+
+	if ( !glewIsSupported("GL_ARB_shading_language_100") )
+	{
+	    err("glmotor: GL_ARB_shading_language_100 error %m");
+		return -2;
+	}
+	if ( !glewIsSupported("GL_ARB_shader_objects") )
+	{
+	    err("glmotor: GL_ARB_shader_objects error %m");
+		return -3;
+	}
+	if ( !glewIsSupported("GL_ARB_vertex_shader") )
+	{
+	    err("glmotor: GL_ARB_vertex_shader error %m");
+		return -4;
+	}
+	if ( !glewIsSupported("GL_ARB_fragment_shader") )
+	{
+	    err("glmotor: GL_ARB_fragment_shader error %m");
+		return -5;
+	}
+	return 0;
+}
+#endif
 
 static void display_log(GLuint instance)
 {
@@ -85,6 +122,11 @@ static GLuint load_shader(GLenum type, GLchar *source, GLuint size)
 
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLuint vertexSize, GLchar *fragmentSource, GLuint fragmentSize)
 {
+#ifdef HAVE_GLEW
+	glewExperimental = 1;
+	if (init_glew())
+		return -1;
+#endif
 	warn("glmotor uses : %s", glGetString(GL_VERSION));
 	warn("glmotor uses : %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	const char * extensions = glGetString(GL_EXTENSIONS);
