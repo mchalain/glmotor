@@ -27,12 +27,10 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 {
 	glClearColor(0.5, 0.5, 0.5, 1.0);
 	glViewport(0, 0, motor->width, motor->height);
-#if 1
 	glClearDepthf(1.0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#endif
 
 #ifdef GLEW
 	glMatrixMode(GL_PROJECTION);

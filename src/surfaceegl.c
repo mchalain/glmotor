@@ -89,12 +89,9 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	EGLNativeDisplayType display = native->display();
 	if (display == NULL)
 		err("glmotor: unable to open the display");
-#if 1
+
 	egl_display = eglGetDisplay(display);
-#else
-	PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = eglGetProcAddress("eglGetPlatformDisplayEXT");
-	egl_display = eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR, display, NULL);
-#endif
+
 	const char * extensions = eglQueryString(display, EGL_EXTENSIONS);
 	dbg("glmotor: egl extensions\n%s", extensions);
 
