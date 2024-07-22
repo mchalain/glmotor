@@ -391,11 +391,11 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
 	}
-	GLuint moveID = glGetUniformLocation(motor->programID, "vMove");
-	glUniformMatrix4fv(moveID, 1, GL_FALSE, &obj->move[0]);
-
 	if (obj->texture)
 		ret = texture_draw(obj->texture);
+
+	GLuint moveID = glGetUniformLocation(motor->programID, "vMove");
+	glUniformMatrix4fv(moveID, 1, GL_FALSE, &obj->move[0]);
 
 	if (obj->nfaces && obj->nfaces < UINT_MAX)
 		glDrawElements(GL_TRIANGLE_STRIP, obj->nfaces * 3, GL_UNSIGNED_INT, 0);
