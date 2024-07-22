@@ -1,6 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
-#include <GL/gl.h>
+
+#ifdef HAVE_GLESV2
+# include <GLES2/gl2.h>
+#else
+# include <GL/gl.h>
+#endif
 #include <EGL/egl.h>
 
 #include "log.h"

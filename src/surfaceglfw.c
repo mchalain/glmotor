@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #ifndef HAVE_GLEW
 # include <GL/gl.h>

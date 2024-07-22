@@ -6,7 +6,11 @@
 #include <unistd.h>
 
 #include <EGL/egl.h>
-#include <GL/gl.h>
+#ifdef HAVE_GLESV2
+# include <GLES2/gl2.h>
+#else
+# include <GL/gl.h>
+#endif
 
 #define GLMOTOR_SURFACE_S struct GLMotor_Surface_s
 #include "glmotor.h"

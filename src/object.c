@@ -8,11 +8,11 @@
 # include <GLES2/gl2ext.h>
 #else
 # include <GL/glew.h>
+# include <GL/gl.h>
 #endif
 #ifdef HAVE_GLU
 #include <GL/glu.h>
 #endif
-#include <GL/gl.h>
 
 #include "glmotor.h"
 #include "log.h"

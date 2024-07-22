@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
