@@ -4,3 +4,4 @@ EGL=y
 
 GLESV2=y
 GLEW=n
+WAYLAND=n

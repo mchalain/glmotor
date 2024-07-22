@@ -15,7 +15,9 @@ glsurface_SOURCES-$(HAVE_X11)+=eglnativex.c
 ifeq ($(HAVE_GBM),y)
 glsurface_SOURCES-$(HAVE_LIBDRM)+=eglnativedrm.c
 endif
+ifeq ($(WAYLAND),y)
 glsurface_LIBRARY-$(EGL)+=wayland-egl
+endif
 glsurface_LIBRARY-$(EGL)+=x11
 glsurface_LIBRARY-$(EGL)+=libdrm
 glsurface_LIBRARY-$(EGL)+=gbm
@@ -32,7 +34,9 @@ glmotor_LIBS+=glsurface
 glmotor_LIBS-$(GLUT)+=glut
 glmotor_LIBRARY-$(GLFW)+=glfw3
 glmotor_LIBRARY-$(EGL)+=egl
+ifeq ($(WAYLAND),y)
 glmotor_LIBRARY-$(EGL)+=wayland-egl
+endif
 glmotor_LIBRARY-$(EGL)+=x11
 glmotor_LIBRARY-$(EGL)+=libdrm
 glmotor_LIBRARY-$(EGL)+=gbm
