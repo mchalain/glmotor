@@ -5,7 +5,7 @@
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
 #else
-# include <GL/glew.h>
+# include <GL/gl.h>
 #endif
 #ifdef HAVE_GLU
 #include <GL/glu.h>
@@ -27,12 +27,16 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 {
 	glClearColor(0.5, 0.5, 0.5, 1.0);
 	glViewport(0, 0, motor->width, motor->height);
-	glClearDepthf(1.0);
 	glEnable(GL_DEPTH_TEST);
+#ifdef HAVE_GLESV2
+	glClearDepthf(1.0);
+#else
+	glClearDepth(1.0);
+#endif
 	glDepthFunc(GL_LESS);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-#ifdef GLEW
+#ifndef HAVE_GLESV2
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 #ifdef HAVE_GLU
@@ -53,7 +57,7 @@ GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *came
 	const GLfloat *applyTarget = defaultTarget;
 	if (target != NULL)
 		applyTarget = target;
-#ifdef GLEW
+#ifndef HAVE_GLESV2
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 #endif
@@ -92,7 +96,7 @@ GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 	GLint ret = 0;
 	GLMotor_t *motor = scene->motor;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#ifdef GLEW
+#ifndef HAVE_GLESV2
 	glLoadIdentity();
 #endif
 	glUseProgram(motor->programID);
