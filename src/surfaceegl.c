@@ -89,13 +89,14 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	if (display == NULL)
 		err("glmotor: unable to open the display");
 
-	egl_display = eglGetDisplay(display);
+	EGLNativeWindowType native_win;
+	native_win = native->createwindow(display, width, height, name);
 
 	const char * extensions = eglQueryString(display, EGL_EXTENSIONS);
 	dbg("glmotor: egl extensions\n%s", extensions);
 
-	EGLNativeWindowType native_win;
-	native_win = native->createwindow(display, width, height, name);
+	egl_display = eglGetDisplay(display);
+
 	EGLint majorVersion;
 	EGLint minorVersion;
 	eglInitialize(egl_display, &majorVersion, &minorVersion);
@@ -116,7 +117,6 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 		EGL_GREEN_SIZE, 8,
 		EGL_BLUE_SIZE, 8,
 		EGL_ALPHA_SIZE, 8,
-		EGL_DEPTH_SIZE, 16,
 		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
 		EGL_NONE
 	};
@@ -143,6 +143,7 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	}
 	else
 	{
+		warn("glmotor: egl buffer");
 		static EGLint pbufferAttribs[] = {
 			EGL_WIDTH,	600,
 			EGL_HEIGHT, 800,
@@ -151,6 +152,12 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 		pbufferAttribs[1] = width;
 		pbufferAttribs[3] = height;
 		window->egl_surface = eglCreatePbufferSurface(egl_display, config, pbufferAttribs);
+	}
+
+	if (window->egl_surface == NULL)
+	{
+		err("glmotor: egl surface error");
+		return NULL;
 	}
 
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
