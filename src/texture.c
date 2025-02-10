@@ -72,6 +72,9 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 		err("glmotor: try to apply texture but shader doesn't contain 'vTexture'");
 		return NULL;
 	}
+	glUniform1i(texture, 0);
+	glActiveTexture(GL_TEXTURE0);
+
 	dbg("glmotor: create texture");
 	GLMotor_Texture_t *tex = NULL;
 
@@ -85,7 +88,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 
 	// "Bind" the newly created texture : all future texture functions will modify this texture
 	glBindTexture(GL_TEXTURE_2D, textureID);
-	glPixelStorei(GL_UNPACK_ALIGNMENT,1);	
+	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 
 	unsigned int components  = (fourcc == FOURCC('D','X','T','1')) ? 3 : 4;
 	unsigned int blockSize = 32;
@@ -133,7 +136,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 			if(width < 1) width = 1;
 			if(height < 1) height = 1;
 			size = ((width+3)/4)*((height+3)/4)*blockSize;
-		} 
+		}
 	}
 	else
 	{
@@ -141,7 +144,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, map);
 		stride = width * blockSize / 8;
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -378,6 +381,8 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		err("glmotor: try to apply texture but shader doesn't contain 'vTexture'");
 		return NULL;
 	}
+	glUniform1i(texture, 0);
+	glActiveTexture(GL_TEXTURE0);
 
 #ifdef HAVE_EGL
 	if (! eglCreateImageKHR)
