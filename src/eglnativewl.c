@@ -305,6 +305,7 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType dislay, GLui
 		wl_shell_surface_add_listener(window->shell_surface, &shell_surface_listener, window);
 		wl_shell_surface_set_toplevel(window->shell_surface);
 	}
+	wl_display_roundtrip(display);
 
 	window->egl_window =
 		wl_egl_window_create(window->surface, width, height);
