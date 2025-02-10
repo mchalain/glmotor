@@ -4,15 +4,19 @@
 
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
+# include <GLES2/gl2ext.h>
+# ifdef HAVE_EGL
+#  include <EGL/egl.h>
+# endif
 # undef HAVE_GLEW
 #else
-#ifdef HAVE_GLEW
-# include <GL/glew.h>
-#endif
+# ifdef HAVE_GLEW
+#  include <GL/glew.h>
+# endif
 # include <GL/gl.h>
 #endif
 #ifdef HAVE_GLU
-#include <GL/glu.h>
+# include <GL/glu.h>
 #endif
 
 #include "glmotor.h"

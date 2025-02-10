@@ -4,8 +4,13 @@
 
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
+# include <GLES2/gl2ext.h>
 #else
+# ifdef HAVE_GLEW
+#  include <GL/glew.h>
+# endif
 # include <GL/gl.h>
+# include <GL/glext.h>
 #endif
 #ifdef HAVE_GLU
 #include <GL/glu.h>
@@ -74,6 +79,8 @@ GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t 
 	entry->entity = obj;
 	entry->next = scene->objects;
 	scene->objects = entry;
+	if(glBindVertexArray)
+		glBindVertexArray(0);
 }
 
 GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const char *name)
@@ -88,7 +95,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const c
 		}
 	}
 	return obj;
-	
+
 }
 
 GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)

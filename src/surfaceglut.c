@@ -8,7 +8,6 @@
 #include <GL/gl.h>
 #include <GL/freeglut.h>
 
-#define GLMOTOR_SURFACE_S struct GLMotor_Surface_s
 #include "glmotor.h"
 #include "log.h"
 
