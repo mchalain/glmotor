@@ -127,6 +127,17 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 
 	GLMotor_Surface_t *window = calloc(1, sizeof(*window));
 	window->native_disp = display;
+	EGLint contextAttribs[] = {
+		EGL_CONTEXT_CLIENT_VERSION, 2,
+		EGL_NONE
+	};
+	window->egl_context = eglCreateContext(egl_display, config, EGL_NO_CONTEXT, contextAttribs);
+	if (window->egl_context == NULL)
+	{
+		err("glmotor: egl context error");
+		return NULL;
+	}
+
 	if (native_win)
 	{
 		window->native_win = native_win;
@@ -143,11 +154,6 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 		pbufferAttribs[3] = height;
 		window->egl_surface = eglCreatePbufferSurface(egl_display, config, pbufferAttribs);
 	}
-	EGLint contextAttribs[] = {
-		EGL_CONTEXT_CLIENT_VERSION, 2,
-		EGL_NONE
-	};
-	window->egl_context = eglCreateContext(egl_display, config, EGL_NO_CONTEXT, contextAttribs);
 
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
 	motor->width = width;
@@ -171,6 +177,7 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 			GLMotor_Event_t *evt = NULL;
 			for (evt = motor->events; evt != NULL; evt = evt->next)
 				motor->eventcb(motor->eventcbdata, evt);
+			free(evt);
 			motor->events = evt;
 		}
 		draw(drawdata);

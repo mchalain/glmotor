@@ -49,6 +49,24 @@ static int init_glew()
 	}
 	return 0;
 }
+#else
+PFNGLBINDVERTEXARRAYOESPROC glBindVertexArray = NULL;
+PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays = NULL;
+
+static int init_egl(void)
+{
+	glGenVertexArrays = (void *) eglGetProcAddress("glGenVertexArraysOES");
+	if(glGenVertexArrays == NULL)
+	{
+		return -1;
+	}
+	glBindVertexArray = (void *) eglGetProcAddress("glBindVertexArrayOES");
+	if(glBindVertexArray == NULL)
+	{
+		return -2;
+	}
+	return 0;
+}
 #endif
 
 static void display_log(GLuint instance)
@@ -125,6 +143,9 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 #ifdef HAVE_GLEW
 	glewExperimental = 1;
 	if (init_glew())
+		return -1;
+#elif defined(HAVE_EGL)
+	if (init_egl())
 		return -1;
 #endif
 	warn("glmotor uses : %s", glGetString(GL_VERSION));

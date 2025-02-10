@@ -1,6 +1,14 @@
 #ifndef __GLMOTOR_H__
 #define __GLMOTOR_H__
 
+#ifdef HAVE_GLESV2
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
+extern PFNGLBINDVERTEXARRAYOESPROC glBindVertexArray;
+extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays;
+#endif
+
 #define GLMOTOR_EXPORT
 
 #ifndef GLMOTOR_SURFACE_S
