@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <EGL/egl.h>
 #ifdef HAVE_GLESV2
@@ -18,8 +19,6 @@
 #include "eglnative.h"
 
 static EGLDisplay* egl_display = NULL;
-
-static char running = 1;
 
 struct eglnative_motor_s *native = NULL;
 struct GLMotor_Surface_s
@@ -97,7 +96,6 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 
 	EGLNativeWindowType native_win;
 	native_win = native->createwindow(display, width, height, name);
-
 	EGLint majorVersion;
 	EGLint minorVersion;
 	eglInitialize(egl_display, &majorVersion, &minorVersion);
@@ -171,7 +169,7 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 
 	do
 	{
-		eglSwapBuffers(egl_display, motor->surf->egl_surface);
+		glmotor_swapbuffers(motor);
 		if (motor->eventcb && motor->events)
 		{
 			GLMotor_Event_t *evt = NULL;
@@ -187,6 +185,20 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 
 GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
 {
+#ifdef DEBUG
+	static uint32_t nbframes = 0;
+	nbframes++;
+	static time_t start = 0;
+	time_t now = time(NULL);
+	if (start == 0)
+		start = time(NULL);
+	else if (start < now)
+	{
+		dbg("glmotor: %lu fps", nbframes / (now - start));
+		start = now;
+		nbframes = 0;
+	}
+#endif
 	return eglSwapBuffers(egl_display, motor->surf->egl_surface);
 }
 

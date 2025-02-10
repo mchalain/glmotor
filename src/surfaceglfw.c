@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
@@ -71,7 +72,7 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 	do
 	{
 		draw(drawdata);
-		glfwSwapBuffers(motor->surf);
+		glmotor_swapbuffers(motor);
 		glfwPollEvents();
 	}
 	while (glfwGetKey(motor->surf, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
@@ -81,6 +82,20 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 
 GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
 {
+#ifdef DEBUG
+	static uint32_t nbframes = 0;
+	nbframes++;
+	static time_t start = 0;
+	time_t now = time(NULL);
+	if (start == 0)
+		start = time(NULL);
+	else if (start < now)
+	{
+		dbg("glmotor: %lu fps", nbframes / (now - start));
+		start = now;
+		nbframes = 0;
+	}
+#endif
 	glfwSwapBuffers(motor->surf);
 	return 0;
 }
