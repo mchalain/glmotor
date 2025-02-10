@@ -62,7 +62,6 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 	GLuint *objID = calloc(4, sizeof(*objID));
 	glGenBuffers(5, objID);
 
-	glBindVertexArray(VAO);
 	// assign vertices (points or positions)
 	glBindBuffer(GL_ARRAY_BUFFER, objID[0]);
 	GLsizeiptr size = maxpoints * sizeof(GLfloat) * 3;
@@ -89,7 +88,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 	GLint color = glGetAttribLocation(motor->programID, "vColor");
 	if (color >= 0)
 		glEnableVertexAttribArray(color);
-	
+
 	// assign uvs
 	glBindBuffer(GL_ARRAY_BUFFER, objID[3]);
 	size = maxpoints * sizeof(GLfloat) * 2;
