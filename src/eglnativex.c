@@ -58,13 +58,17 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 				running = GL_FALSE;
 			else
 			{
-				GLMotor_Event_t *evt = calloc(1, sizeof(*evt));
-				evt->type = EVT_KEY;
-				evt->data.key.mode = mode;
-				evt->data.key.code = xev.xkey.keycode;
-				evt->data.key.value = text;
-				evt->next = motor->events;
-				motor->events = evt;
+				GLMotor_Event_t evt = {
+					.type = EVT_KEY,
+					.data = {
+						.key = {
+							.mode = mode,
+							.code = xev.xkey.keycode,
+							.value = text,
+						},
+					},
+				};
+				glmotor_newevent(motor, evt);
 			}
 		}
 		if (xev.type == KeyRelease)
@@ -82,7 +86,7 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 
 static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLuint width, GLuint height, const GLchar *name)
 {
-	
+
 	Window root = DefaultRootWindow(display);
 
 	XSetWindowAttributes swa;

@@ -173,3 +173,12 @@ GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb
 	motor->eventcb = cb;
 	motor->eventcbdata = cbdata;
 }
+
+GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event)
+{
+	GLMotor_Event_t *evt = calloc(1, sizeof(*evt));
+	memmove(evt, &event, sizeof(*evt));
+	evt->next = motor->events;
+	motor->events = evt;
+	return 0;
+}

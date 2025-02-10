@@ -160,7 +160,7 @@ int main(int argc, char** argv)
 
 	if (motor == NULL)
 		return -1;
-	
+
 	glmotor_load(motor, vertexshader, fragmentshader);
 
 	GLMotor_Scene_t *scene = scene_create(motor);
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 	{
 		scene_appendobject(scene, obj);
 	}
-#if 0
+#if 1
 	glmotor_seteventcb(motor, parseevent, scene);
 #else
 	GLMotor_Rotate_t rotate = { 0 };

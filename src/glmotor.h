@@ -87,6 +87,7 @@ struct GLMotor_Translate_s
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv);
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertex, GLuint vertexSize, GLchar *fragment, GLuint fragmentSize);
 GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata);
+GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event);
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata);
 GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor);
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor);
