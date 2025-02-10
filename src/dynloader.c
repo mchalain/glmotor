@@ -339,10 +339,10 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			if (tex)
 				object_addtexture(obj, tex);
 			else
-				err("texture \"%s\" not supported", line + 6);
+				err("texture \"%s\" not supported", line + 7);
 		}
 	} while (ret != 0);
-	
+
 
 	fclose(pFile);
 	return obj;
@@ -351,13 +351,16 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadTGA(GLMotor_t *motor, char *fileName)
 {
 	char *buffer = NULL;
-	FILE *f;
+	FILE *f = NULL;
 	unsigned char tgaheader[12];
 	unsigned char attributes[6];
 	unsigned int imagesize;
 
 	f = fopen(fileName, "rb");
-	if(f == NULL) return NULL;
+	if(f == NULL)
+	{
+		return NULL;
+	}
 
 	if(fread(&tgaheader, sizeof(tgaheader), 1, f) == 0)
 	{
@@ -387,6 +390,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadTGA(GLMotor_t *motor, char *fileN
 	if(fread(buffer, 1, imagesize, f) != imagesize)
 	{
 		free(buffer);
+		fclose(f);
 		return NULL;
 	}
 	fclose(f);
