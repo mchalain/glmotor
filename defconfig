@@ -1,7 +1,6 @@
-GLUT=y
+GLUT=n
 GLFW=n
-EGL=n
+EGL=y
 
-GLESV2=n
-GLEW=y
-WAYLAND=n
+GLESV2=y
+GLEW=n
