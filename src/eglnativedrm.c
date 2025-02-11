@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 #include <unistd.h>
 
 #ifdef HAVE_GLESV2
@@ -13,9 +13,9 @@
 
 #include <xf86drm.h>
 #include <xf86drmMode.h>
-#include <drm/drm.h>
-#include <drm/drm_mode.h>
-#include <drm/drm_fourcc.h>
+#include <drm.h>
+#include <drm_mode.h>
+#include <drm_fourcc.h>
 #include <gbm.h>
 
 #include "log.h"
@@ -90,7 +90,7 @@ static int init_drm(void)
 	int i, area;
 
 	drm.fd = open("/dev/dri/card0", O_RDWR);
-	
+
 	if (drm.fd < 0) {
 		err("glmotor: could not open drm device");
 		return -1;
@@ -239,7 +239,7 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLu
 			GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
 	if (!gbm.surface) {
 		err("glmotor: failed to create gbm surface");
-		return -1;
+		return NULL;
 	}
 
 	return (EGLNativeWindowType) gbm.surface;
