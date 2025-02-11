@@ -27,6 +27,7 @@ struct GLMotor_Scene_s
 	GLMotor_t *motor;
 	GLMotor_list_t *objects;
 };
+static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height);
 
 GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 {
@@ -53,6 +54,7 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 	GLMotor_Scene_t *scene;
 	scene = calloc(1, sizeof(*scene));
 	scene->motor = motor;
+	scene_setresolution(scene, motor->width, motor->height);
 	return scene;
 }
 
@@ -71,6 +73,21 @@ GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *came
 			applyTarget[0], applyTarget[1], applyTarget[2],
 			0, 1, 0);
 #endif
+}
+
+static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height)
+{
+	GLMotor_t * motor = scene->motor;
+	GLfloat vResolution[] = {
+
+		 1.0f, 1.0f,
+	};
+	vResolution[0] /= (float)width;
+	vResolution[1] /= (float)height;
+	GLuint resID = glGetUniformLocation(motor->programID, "vResolution");
+	glUniform2fv(resID, 1, vResolution);
+
+	return 0;
 }
 
 GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t *obj)
