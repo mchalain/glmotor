@@ -92,8 +92,28 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	EGLNativeWindowType native_win;
 	native_win = native->createwindow(display, width, height, name);
 
+#ifdef DEBUG
+	dbg("glmotor: egl extensions");
 	const char * extensions = eglQueryString(display, EGL_EXTENSIONS);
-	dbg("glmotor: egl extensions\n%s", extensions);
+	const char * end;
+	if (extensions)
+		end = strchr(extensions, ' ');
+	else
+		dbg("\tnone");
+	while (extensions != NULL)
+	{
+		size_t length = strlen(extensions);
+		if (end)
+			length = end - extensions;
+		dbg("\t%.*s", length, extensions);
+		extensions = end;
+		if (end)
+		{
+			extensions++;
+			end = strchr(extensions, ' ');
+		}
+	}
+#endif
 
 	egl_display = eglGetDisplay(display);
 

@@ -154,8 +154,29 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 #endif
 	warn("glmotor uses : %s", glGetString(GL_VERSION));
 	warn("glmotor uses : %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+#ifdef DEBUG
+	dbg("glmotor: gl extensions");
 	const char * extensions = glGetString(GL_EXTENSIONS);
-	dbg("glmotor uses extensions:\n%s", extensions);
+	const char * end;
+	if (extensions)
+		end = strchr(extensions, ' ');
+	else
+		dbg("\tnone");
+	while (extensions != NULL)
+	{
+		size_t length = strlen(extensions);
+		if (end)
+			length = end - extensions;
+		dbg("\t%.*s", length, extensions);
+		extensions = end;
+		if (end)
+		{
+			extensions++;
+			end = strchr(extensions, ' ');
+		}
+	}
+#endif
+
 	GLuint vertexID = load_shader(GL_VERTEX_SHADER, vertexSource, vertexSize);
 	if (vertexID == 0)
 		return 0;
