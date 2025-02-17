@@ -19,6 +19,8 @@
 #include "log.h"
 #include "eglnative.h"
 
+#define egl_dbg(...)
+
 static struct wl_display *display;
 static struct wl_compositor *compositor = NULL;
 static struct wl_shell *shell = NULL;
@@ -117,7 +119,7 @@ static void keyboard_key (void *data, struct wl_keyboard *keyboard, uint32_t ser
 			},
 		};
 		glmotor_newevent(window->motor, evt);
-		dbg("the key %s was pressed %#x", key_name, keysym);
+		egl_dbg("the key %s was pressed %#x", key_name, keysym);
 	}
 	else if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
 		xkb_keysym_t keysym = xkb_state_key_get_one_sym (xkb_state, key+8);
