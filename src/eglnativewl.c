@@ -293,6 +293,7 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType dislay, GLui
 		xdg_surface_add_listener(window->xdg_surface, &xdg_surface_listener, window);
 
 		xdg_toplevel = xdg_surface_get_toplevel(window->xdg_surface);
+		xdg_toplevel_set_title(xdg_toplevel, name);
 		wl_surface_commit(window->surface);
 		xdg_toplevel_add_listener(xdg_toplevel, &xdg_toplevel_listener, window);
 	}
@@ -332,9 +333,11 @@ static void native_destroy(EGLNativeDisplayType native_display)
 {
 	struct wl_display *display = (struct wl_display *)native_display;
 	wl_egl_window_destroy(window->egl_window);
-	wl_shell_surface_destroy(window->shell_surface);
+	if (window->shell_surface)
+		wl_shell_surface_destroy(window->shell_surface);
+	if (window->xdg_surface)
+		xdg_surface_destroy(window->xdg_surface);
 	wl_surface_destroy(window->surface);
-	wl_display_disconnect(display);
 }
 
 struct eglnative_motor_s *eglnative_wl = &(struct eglnative_motor_s)
