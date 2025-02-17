@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 
+#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>

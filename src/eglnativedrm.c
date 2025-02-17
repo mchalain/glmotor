@@ -9,6 +9,7 @@
 #else
 # include <GL/gl.h>
 #endif
+#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 
 #include <xf86drm.h>

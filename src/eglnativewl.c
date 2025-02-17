@@ -6,6 +6,7 @@
 
 #include <wayland-client.h>
 #include <wayland-egl.h>
+#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #ifdef HAVE_XKBCOMMON
 #include <xkbcommon/xkbcommon.h>
