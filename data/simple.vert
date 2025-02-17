@@ -1,10 +1,9 @@
-// #version 100 es
 attribute vec3 vPosition;
 attribute vec3 vColor;
 attribute vec2 vUV;
 varying vec4 color;
 varying vec2 texUV;
-varying vec2 resolution;;
+varying vec2 resolution;
 
 uniform mat4 vMove;
 uniform vec2 vResolution;
