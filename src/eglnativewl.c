@@ -69,68 +69,74 @@ static void keyboard_keymap (void *data, struct wl_keyboard *keyboard, uint32_t 
 	xkb_state_unref (xkb_state);
 	xkb_state = xkb_state_new (keymap);
 }
-static void keyboard_enter (void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys) {
 
+static void keyboard_enter (void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys) {
 }
 static void keyboard_leave (void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface) {
-
 }
+
 static void keyboard_key (void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
 	struct GLMotor_EGLWL_s *window = data;
+	static int mode = 0;
 	if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		xkb_keysym_t keysym = xkb_state_key_get_one_sym (xkb_state, key+8);
-		uint32_t utf32 = xkb_keysym_to_utf32 (keysym);
 		xkb_keysym_get_name (keysym, key_name, 64);
-		if (utf32) {
-			if (utf32 >= 0x1b)
+		int keycode = 0;
+		switch (keysym)
+		{
+			case XKB_KEY_Escape:
 				running = 0;
-			if (utf32 >= 0x21 && utf32 <= 0x7E) {
-				dbg("the key %c was pressed", (char)utf32);
-				if (utf32 == 'q')
-					running = 0;
-				else
-				{
-				}
-			}
-			else {
-				dbg("the key U+%04X was pressed", utf32);
-			}
+			break;
+			case XKB_KEY_Left:
+				keycode = 0x72;
+			break;
+			case XKB_KEY_Right:
+				keycode = 0x71;
+			break;
+			case XKB_KEY_Up:
+				keycode = 0x6f;
+			break;
+			case XKB_KEY_Down:
+				keycode = 0x74;
+			break;
+			case XKB_KEY_Control_L:
+				mode |= MODE_CTRL;
+			break;
+			case XKB_KEY_Shift_L:
+				mode |= MODE_SHIFT;
+			break;
 		}
-		else {
-			int keycode = 0;
-			switch (keysym)
-			{
-				case XKB_KEY_Left:
-					keycode = 0x72;
-				break;
-				case XKB_KEY_Right:
-					keycode = 0x71;
-				break;
-				case XKB_KEY_Up:
-					keycode = 0x6f;
-				break;
-				case XKB_KEY_Down:
-					keycode = 0x74;
-				break;
-			}
-			GLMotor_Event_t evt = {
-				.type = EVT_KEY,
-				.data = {
-					.key = {
-						.mode = 0,
-						.code = keycode,
-						.value = 0,
-					},
+		GLMotor_Event_t evt = {
+			.type = EVT_KEY,
+			.data = {
+				.key = {
+					.mode = mode,
+					.code = keycode,
+					.value = 0,
 				},
-			};
-			glmotor_newevent(window->motor, evt);
-			dbg("the key %s was pressed %#x", key_name, keysym);
+			},
+		};
+		glmotor_newevent(window->motor, evt);
+		dbg("the key %s was pressed %#x", key_name, keysym);
+	}
+	else if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
+		xkb_keysym_t keysym = xkb_state_key_get_one_sym (xkb_state, key+8);
+		switch (keysym)
+		{
+			case XKB_KEY_Control_L:
+				mode &= ~MODE_CTRL;
+			break;
+			case XKB_KEY_Shift_L:
+				mode &= ~MODE_SHIFT;
+			break;
 		}
 	}
 }
+
 static void keyboard_modifiers (void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group) {
 	xkb_state_update_mask (xkb_state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
 }
+
 static struct wl_keyboard_listener keyboard_listener = {
 	&keyboard_keymap,
 	&keyboard_enter,
