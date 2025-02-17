@@ -134,8 +134,8 @@ GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name)
 int main(int argc, char** argv)
 {
 
-	const char *vertexshader = "data/simple.vert";
-	const char *fragmentshader = "data/simple.frag";
+	const char *vertexshader = PKG_DATADIR"/simple.vert";
+	const char *fragmentshader = PKG_DATADIR"/simple.frag";
 	const char *object = NULL;
 	int opt;
 	opterr = 0;
