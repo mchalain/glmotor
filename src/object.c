@@ -332,6 +332,8 @@ GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Transl
 
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex)
 {
+	if (obj->texture)
+		texture_destroy(obj->texture);
 	obj->texture = tex;
 }
 

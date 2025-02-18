@@ -260,82 +260,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			next = line + 6;
 			while(isspace(*next)) next++;
 			int ret = 0;
-			GLMotor_Texture_t *tex = NULL;
-			if (!strncmp("v4l2", next, 4))
-			{
-				next = next + 4;
-				char device[255] = "/dev/video0";
-				GLuint width = 640;
-				GLuint height = 480;
-				uint32_t fourcc = FOURCC('Y','U','Y','V');
-				char fcc1 = 0, fcc2 = 0, fcc3 = 0, fcc4 = 0;
-				next = strchr(next, '(');
-				if (next)
-				{
-					next++;
-					sscanf(next, "\"%s\"", device);
-					char *end = strchr(device, '\"');
-					if (end)
-						end[0] = '\0';
-					next = strchr(next + 1, ',');
-					if (next[1] == ' ') next++;
-				}
-				if (next)
-				{
-					next++;
-					sscanf(next, "%u", &width);
-					next = strchr(next, ',');
-					if (next[1] == ' ') next++;
-				}
-				if (next)
-				{
-					next++;
-					sscanf(next, "%u", &height);
-					next = strchr(next, ',');
-					if (next[1] == ' ') next++;
-				}
-				if (next)
-				{
-					next++;
-					sscanf(next, "%c", &fcc1);
-				}
-				if (next)
-				{
-					next++;
-					sscanf(next, "%c", &fcc2);
-				}
-				if (next)
-				{
-					next++;
-					sscanf(next, "%c", &fcc3);
-				}
-				if (next)
-				{
-					next++;
-					sscanf(next, "%c", &fcc4);
-					next = strchr(next + 1, ')');
-				}
-				if (next)
-				{
-					fourcc = FOURCC(fcc1, fcc2, fcc3, fcc4);
-				}
-				tex = texture_fromcamera(motor, device, width, height, fourcc);
-			}
-			else if (!strncmp("default", next, 6))
-			{
-				GLubyte pixels[4 * 4] =
-				{
-					255,   0,   0, // Red
-					  0, 255,   0, // Green
-					  0,   0, 255, // Blue
-					255, 255,   0  // Yellow
-				};
-				tex = texture_create(motor, 2, 2, FOURCC('R', 'G', '2', '4'), 0, pixels);
-			}
-			else
-			{
-				tex = texture_load(motor, next);
-			}
+			GLMotor_Texture_t *tex = texture_load(motor, next);
 			if (tex)
 				object_addtexture(obj, tex);
 			else
@@ -348,7 +273,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 	return obj;
 }
 
-GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadTGA(GLMotor_t *motor, char *fileName)
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadTGA(GLMotor_t *motor, const char *fileName)
 {
 	char *buffer = NULL;
 	FILE *f = NULL;
@@ -401,7 +326,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadTGA(GLMotor_t *motor, char *fileN
 	return texture;
 }
 
-GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadDDS(GLMotor_t *motor, char *fileName)
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadDDS(GLMotor_t *motor, const char *fileName)
 {
 	unsigned char header[124];
 
@@ -449,12 +374,91 @@ GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadDDS(GLMotor_t *motor, char *fileN
 	return tex;
 }
 
-GLMOTOR_EXPORT GLMotor_Texture_t * texture_load(GLMotor_t *motor, char *fileName)
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadV4L2(GLMotor_t *motor, const char *config)
 {
-	size_t length = strlen(fileName);
-	if (!strncmp(fileName + length - 4, ".tga",4))
-		return texture_loadTGA(motor, fileName);
-	if (!strncmp(fileName + length - 4, ".dds",4))
-		return texture_loadDDS(motor, fileName);
+	const char *next = config;
+	char device[255] = "/dev/video0";
+	GLuint width = 640;
+	GLuint height = 480;
+	uint32_t fourcc = FOURCC('Y','U','Y','V');
+	char fcc1 = 0, fcc2 = 0, fcc3 = 0, fcc4 = 0;
+	next = strchr(next, '(');
+	if (next)
+	{
+		next++;
+		sscanf(next, "\"%s\"", device);
+		char *end = strchr(device, '\"');
+		if (end)
+			end[0] = '\0';
+		next = strchr(next + 1, ',');
+		if (next && next[1] == ' ') next++;
+	}
+	if (next)
+	{
+		next++;
+		sscanf(next, "%u", &width);
+		next = strchr(next, ',');
+		if (next && next[1] == ' ') next++;
+	}
+	if (next)
+	{
+		next++;
+		sscanf(next, "%u", &height);
+		next = strchr(next, ',');
+		if (next && next[1] == ' ') next++;
+	}
+	if (next)
+	{
+		next++;
+		sscanf(next, "%c", &fcc1);
+	}
+	if (next)
+	{
+		next++;
+		sscanf(next, "%c", &fcc2);
+	}
+	if (next)
+	{
+		next++;
+		sscanf(next, "%c", &fcc3);
+	}
+	if (next)
+	{
+		next++;
+		sscanf(next, "%c", &fcc4);
+		next = strchr(next + 1, ')');
+	}
+	if (next)
+	{
+		fourcc = FOURCC(fcc1, fcc2, fcc3, fcc4);
+	}
+	GLMotor_Texture_t *tex = texture_fromcamera(motor, device, width, height, fourcc);
+	return tex;
+}
+
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_loaddefault(GLMotor_t *motor, const char *config)
+{
+	GLubyte pixels[4 * 4] =
+	{
+		255,   0,   0, // Red
+		  0, 255,   0, // Green
+		  0,   0, 255, // Blue
+		255, 255,   0  // Yellow
+	};
+	GLMotor_Texture_t *tex = texture_create(motor, 2, 2, FOURCC('R', 'G', '2', '4'), 0, pixels);
+	return tex;
+}
+
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_load(GLMotor_t *motor, const char *config)
+{
+	size_t length = strlen(config);
+	if (length >= 6 && !strncmp("default", config, 6))
+		return texture_loaddefault(motor, config + 6);
+	if (length >= 4 &&!strncmp("v4l2", config, 4))
+		return texture_loadV4L2(motor, config + 4);
+	if (!strncmp(config + length - 4, ".tga",4))
+		return texture_loadTGA(motor, config);
+	if (!strncmp(config + length - 4, ".dds",4))
+		return texture_loadDDS(motor, config);
 	return NULL;
 }

@@ -25,6 +25,7 @@ struct GLMotor_config_s
 	const char *vertexshader;
 	const char *fragmentshader;
 	const char *object;
+	const char *texture;
 };
 
 static int main_parseconfig(const char *file, GLMotor_config_t *config)
@@ -45,6 +46,10 @@ static int main_parseconfig(const char *file, GLMotor_config_t *config)
 	if (config_lookup_string(&configfile, "object", &value) == CONFIG_TRUE)
 	{
 		config->object = value;
+	}
+	if (config_lookup_string(&configfile, "texture", &value) == CONFIG_TRUE)
+	{
+		config->texture = value;
 	}
 
 #endif
@@ -174,12 +179,13 @@ int main(int argc, char** argv)
 		.vertexshader = PKG_DATADIR"/simple.vert",
 		.fragmentshader = PKG_DATADIR"/simple.frag",
 		.object = NULL,
+		.texture = NULL,
 	};
 	int opt;
 	opterr = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-o:v:f:C:");
+		opt = getopt(argc, argv, "-o:v:f:C:t:");
 		switch (opt)
 		{
 			case 'C':
@@ -193,6 +199,9 @@ int main(int argc, char** argv)
 			break;
 			case 'f':
 				config.fragmentshader = optarg;
+			break;
+			case 't':
+				config.texture = optarg;
 			break;
 		}
 	} while (opt != -1);
@@ -221,6 +230,13 @@ int main(int argc, char** argv)
 		obj = object_load(motor, "object", config.object);
 	if (obj != NULL)
 	{
+		GLMotor_Texture_t *tex = NULL;
+		if (config.texture)
+		{
+			tex = texture_load(motor, config.texture);
+		}
+		if (tex)
+			object_addtexture(obj, tex);
 		scene_appendobject(scene, obj);
 	}
 #if 1

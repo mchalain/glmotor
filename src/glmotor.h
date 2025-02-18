@@ -103,7 +103,7 @@ GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor);
 typedef struct GLMotor_Texture_s GLMotor_Texture_t;
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, uint32_t fourcc, GLuint mipmaps, GLchar *map);
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const char *device, GLuint width, GLuint height, uint32_t fourcc);
-GLMOTOR_EXPORT GLMotor_Texture_t * texture_load(GLMotor_t *motor, char *fileName);
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_load(GLMotor_t *motor, const char *fileName);
 GLMOTOR_EXPORT GLint texture_draw(GLMotor_Texture_t *tex);
 GLMOTOR_EXPORT void texture_destroy(GLMotor_Texture_t *tex);
 
