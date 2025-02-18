@@ -14,6 +14,14 @@
 static GLfloat g_angle = 0.0;
 static GLfloat g_camera[] = {0.0, 0.0, 100.0};
 
+typedef struct GLMotor_config_s GLMotor_config_t;
+struct GLMotor_config_s
+{
+	const char *vertexshader;
+	const char *fragmentshader;
+	const char *object;
+};
+
 static void render(void *data)
 {
 	GLMotor_Scene_t *scene = (GLMotor_Scene_t *)data;
@@ -133,10 +141,11 @@ GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name)
 
 int main(int argc, char** argv)
 {
-
-	const char *vertexshader = PKG_DATADIR"/simple.vert";
-	const char *fragmentshader = PKG_DATADIR"/simple.frag";
-	const char *object = NULL;
+	GLMotor_config_t config = {
+		.vertexshader = PKG_DATADIR"/simple.vert",
+		.fragmentshader = PKG_DATADIR"/simple.frag",
+		.object = NULL,
+	};
 	int opt;
 	opterr = 0;
 	do
@@ -145,13 +154,13 @@ int main(int argc, char** argv)
 		switch (opt)
 		{
 			case 'o':
-				object = optarg;
+				config.object = optarg;
 			break;
 			case 'v':
-				vertexshader = optarg;
+				config.vertexshader = optarg;
 			break;
 			case 'f':
-				fragmentshader = optarg;
+				config.fragmentshader = optarg;
 			break;
 		}
 	} while (opt != -1);
@@ -161,7 +170,7 @@ int main(int argc, char** argv)
 	if (motor == NULL)
 		return -1;
 
-	glmotor_load(motor, vertexshader, fragmentshader);
+	glmotor_load(motor, config.vertexshader, config.fragmentshader);
 
 	GLMotor_Scene_t *scene = scene_create(motor);
 
@@ -171,10 +180,10 @@ int main(int argc, char** argv)
 #endif
 
 	GLMotor_Object_t *obj = NULL;
-	if (object == NULL)
+	if (config.object == NULL)
 		obj = load_staticobject(motor, "object");
 	else
-		obj = object_load(motor, "object", object);
+		obj = object_load(motor, "object", config.object);
 	if (obj != NULL)
 	{
 		scene_appendobject(scene, obj);
