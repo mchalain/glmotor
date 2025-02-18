@@ -33,6 +33,7 @@ glmotor_SOURCES+=dynloader.c
 glmotor_GENERATED-$(HAVE_WAYLAND_EGL)+=xdg-shell-protocol.c
 glmotor_LIBS+=glsurface
 glmotor_LIBS-$(GLUT)+=glut
+glmotor_LIBRARY-y+=libconfig
 glmotor_LIBRARY-$(GLFW)+=glfw3
 glmotor_LIBRARY-$(EGL)+=egl
 glmotor_LIBRARY-$(EGL)+=wayland-egl

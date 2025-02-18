@@ -10,6 +10,11 @@
 #include "glmotor.h"
 #include "loader.h"
 #include "log.h"
+#ifdef HAVE_LIBCONFIG
+#include <libconfig.h>
+
+static config_t configfile = {0};
+#endif
 
 static GLfloat g_angle = 0.0;
 static GLfloat g_camera[] = {0.0, 0.0, 100.0};
@@ -21,6 +26,29 @@ struct GLMotor_config_s
 	const char *fragmentshader;
 	const char *object;
 };
+
+static int main_parseconfig(const char *file, GLMotor_config_t *config)
+{
+	const char *value;
+#ifdef HAVE_LIBCONFIG
+	config_init(&configfile);
+	if (config_read_file(&configfile, file) != CONFIG_TRUE)
+		return -1;
+	if (config_lookup_string(&configfile, "vertex", &value) == CONFIG_TRUE)
+	{
+		config->vertexshader = value;
+	}
+	if (config_lookup_string(&configfile, "fragment", &value) == CONFIG_TRUE)
+	{
+		config->fragmentshader = value;
+	}
+	if (config_lookup_string(&configfile, "object", &value) == CONFIG_TRUE)
+	{
+		config->object = value;
+	}
+
+#endif
+}
 
 static void render(void *data)
 {
@@ -141,6 +169,7 @@ GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name)
 
 int main(int argc, char** argv)
 {
+	const char *configfile = NULL;
 	GLMotor_config_t config = {
 		.vertexshader = PKG_DATADIR"/simple.vert",
 		.fragmentshader = PKG_DATADIR"/simple.frag",
@@ -150,9 +179,12 @@ int main(int argc, char** argv)
 	opterr = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-o:v:f:");
+		opt = getopt(argc, argv, "-o:v:f:C:");
 		switch (opt)
 		{
+			case 'C':
+				configfile = optarg;
+			break;
 			case 'o':
 				config.object = optarg;
 			break;
@@ -164,6 +196,9 @@ int main(int argc, char** argv)
 			break;
 		}
 	} while (opt != -1);
+
+	if (configfile)
+		main_parseconfig(configfile, &config);
 
 	GLMotor_t *motor = glmotor_create(argc, argv);
 
