@@ -174,7 +174,6 @@ GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name)
 
 int main(int argc, char** argv)
 {
-	const char *configfile = NULL;
 	GLMotor_config_t config = {
 		.vertexshader = PKG_DATADIR"/simple.vert",
 		.fragmentshader = PKG_DATADIR"/simple.frag",
@@ -189,7 +188,7 @@ int main(int argc, char** argv)
 		switch (opt)
 		{
 			case 'C':
-				configfile = optarg;
+				main_parseconfig(optarg, &config);
 			break;
 			case 'o':
 				config.object = optarg;
@@ -206,8 +205,6 @@ int main(int argc, char** argv)
 		}
 	} while (opt != -1);
 
-	if (configfile)
-		main_parseconfig(configfile, &config);
 
 	GLMotor_t *motor = glmotor_create(argc, argv);
 
@@ -216,29 +213,40 @@ int main(int argc, char** argv)
 
 	glmotor_load(motor, config.vertexshader, config.fragmentshader);
 
-	GLMotor_Scene_t *scene = scene_create(motor);
-
-#if 0
-	GLfloat target[] = {0.0, 0.0, 0.0};
-	scene_movecamera(scene, g_camera, target);
-#endif
-
 	GLMotor_Object_t *obj = NULL;
 	if (config.object == NULL)
 		obj = load_staticobject(motor, "object");
 	else
 		obj = object_load(motor, "object", config.object);
-	if (obj != NULL)
+	if (obj == NULL)
 	{
-		GLMotor_Texture_t *tex = NULL;
-		if (config.texture)
-		{
-			tex = texture_load(motor, config.texture);
-		}
-		if (tex)
-			object_addtexture(obj, tex);
-		scene_appendobject(scene, obj);
+		err("glmotor: impossible to create object");
+		glmotor_destroy(motor);
+		return 1;
 	}
+
+	GLMotor_Texture_t *tex = NULL;
+	if (config.texture)
+	{
+		tex = texture_load(motor, config.texture);
+	}
+
+	if (tex)
+		object_addtexture(obj, tex);
+
+	GLMotor_Scene_t *scene = scene_create(motor);
+	if (scene == NULL)
+	{
+		err("glmotor: impossible to create scene");
+		glmotor_destroy(motor);
+		return 1;
+	}
+	scene_appendobject(scene, obj);
+#if 0
+	GLfloat target[] = {0.0, 0.0, 0.0};
+	scene_movecamera(scene, g_camera, target);
+#endif
+
 #if 1
 	glmotor_seteventcb(motor, parseevent, scene);
 #else
