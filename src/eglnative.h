@@ -9,6 +9,7 @@ struct eglnative_motor_s
 	EGLNativeDisplayType (*display)();
 	EGLNativeWindowType (*createwindow)(EGLNativeDisplayType native_display,
 							GLuint width, GLuint height, const GLchar *name);
+	void (*windowsize)(EGLNativeWindowType native_win, GLuint *width, GLuint *height);
 	GLboolean (*running)(EGLNativeWindowType native_win, GLMotor_t *motor);
 	void (*destroy)(EGLNativeDisplayType native_display);
 };

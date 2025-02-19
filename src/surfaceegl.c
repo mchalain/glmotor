@@ -185,6 +185,8 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	motor->width = width;
 	motor->height = height;
 	motor->surf = window;
+	if (native->windowsize)
+		native->windowsize(motor->surf->native_win, &motor->width, &motor->height);
 
 	eglMakeCurrent(egl_display, window->egl_surface, window->egl_surface, window->egl_context);
 

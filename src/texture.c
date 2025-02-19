@@ -258,7 +258,7 @@ static int camerainit(const char *device, GLuint *width, GLuint *height, GLuint 
 		err("glmotor: get v4l2 fmt error %m");
 		goto camerainit_error;
 	}
-	dbg("fmt width=%d height=%d pfmt=%.4s",
+	warn("glmotor: camera texture width=%d height=%d 4cc=%.4s",
 		   fmt.fmt.pix.width, fmt.fmt.pix.height, (char*)&fmt.fmt.pix.pixelformat);
 
 	fmt.fmt.pix.width = *width;

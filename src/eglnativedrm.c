@@ -218,9 +218,6 @@ static void page_flip_handler(int fd, unsigned int frame,
 
 static EGLNativeDisplayType native_display()
 {
-	GLuint width = 640;
-	GLuint height = 480;
-
 	if (init_drm())
 	{
 		return NULL;
@@ -240,8 +237,9 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLu
 			GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
 	if (!gbm.surface) {
 		err("glmotor: failed to create gbm surface");
-		return NULL;
+		return 0;
 	}
+	warn("glmotor: window size %lux%lu", drm.mode->hdisplay, drm.mode->vdisplay);
 
 	return (EGLNativeWindowType) gbm.surface;
 }
@@ -325,11 +323,21 @@ static void native_destroy(EGLNativeDisplayType native_display)
 {
 }
 
+static void native_windowsize(EGLNativeWindowType native_win, GLuint *width, GLuint *height)
+{
+	if (drm.mode)
+	{
+		*width = drm.mode->hdisplay;
+		*height = drm.mode->vdisplay;
+ 	}
+}
+
 struct eglnative_motor_s *eglnative_drm = &(struct eglnative_motor_s)
 {
 	.name = "drm",
 	.display = native_display,
 	.createwindow = native_createwindow,
+	.windowsize = native_windowsize,
 	.running = native_running,
 	.destroy = native_destroy,
 };

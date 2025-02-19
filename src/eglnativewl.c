@@ -354,6 +354,7 @@ struct eglnative_motor_s *eglnative_wl = &(struct eglnative_motor_s)
 	.name = "wl",
 	.display = native_display,
 	.createwindow = native_createwindow,
+	.windowsize = NULL,
 	.running = native_running,
 	.destroy = native_destroy,
 };

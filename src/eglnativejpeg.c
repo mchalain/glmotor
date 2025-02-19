@@ -100,7 +100,7 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLu
 {
 	g_width = width;
 	g_height = height;
-	
+
 	return (EGLNativeWindowType) NULL;
 }
 
@@ -113,6 +113,7 @@ struct eglnative_motor_s *eglnative_jpeg = &(struct eglnative_motor_s)
 	.name = "jpeg",
 	.display = native_display,
 	.createwindow = native_createwindow,
+	.windowsize = NULL,
 	.running = native_running,
 	.destroy = native_destroy,
 };
