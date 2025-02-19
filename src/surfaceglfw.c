@@ -12,25 +12,17 @@
 
 #include "log.h"
 
-GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
+GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv)
 {
-	GLuint width = 640;
-	GLuint height = 480;
 	GLchar *name = "GLMotor";
 
 	int opt;
 	optind = 1;
 	do
 	{
-		opt = getopt(argc, argv, "w:h:n:");
+		opt = getopt(argc, argv, "n:");
 		switch (opt)
 		{
-			case 'w':
-				width = atoi(optarg);
-			break;
-			case 'h':
-				height = atoi(optarg);
-			break;
 			case 'n':
 				name = optarg;
 			break;
@@ -50,7 +42,7 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window;
-	window = glfwCreateWindow(width, height, name, NULL, NULL);
+	window = glfwCreateWindow(config->width, config->height, name, NULL, NULL);
 	if (window == NULL)
 	{
 		err("glmotor: Window creation error");
@@ -59,8 +51,8 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	glfwMakeContextCurrent(window);
 
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
-	motor->width = width;
-	motor->height = height;
+	motor->width = config->width;
+	motor->height = config->height;
 	motor->surf = window;
 
 	return motor;

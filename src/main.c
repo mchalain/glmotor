@@ -19,15 +19,6 @@ static config_t configfile = {0};
 static GLfloat g_angle = 0.0;
 static GLfloat g_camera[] = {0.0, 0.0, 100.0};
 
-typedef struct GLMotor_config_s GLMotor_config_t;
-struct GLMotor_config_s
-{
-	const char *vertexshader;
-	const char *fragmentshader;
-	const char *object;
-	const char *texture;
-};
-
 static int main_parseconfig(const char *file, GLMotor_config_t *config)
 {
 	const char *value;
@@ -35,6 +26,15 @@ static int main_parseconfig(const char *file, GLMotor_config_t *config)
 	config_init(&configfile);
 	if (config_read_file(&configfile, file) != CONFIG_TRUE)
 		return -1;
+	GLuint intvalue;
+	if (config_lookup_int(&configfile, "width", &intvalue) == CONFIG_TRUE)
+	{
+		config->width = intvalue;
+	}
+	if (config_lookup_int(&configfile, "height", &intvalue) == CONFIG_TRUE)
+	{
+		config->height = intvalue;
+	}
 	if (config_lookup_string(&configfile, "vertex", &value) == CONFIG_TRUE)
 	{
 		config->vertexshader = value;
@@ -184,9 +184,15 @@ int main(int argc, char** argv)
 	opterr = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-o:v:f:C:t:");
+		opt = getopt(argc, argv, "-W:H:o:v:f:C:t:");
 		switch (opt)
 		{
+			case 'W':
+				config.width = atoi(optarg);
+			break;
+			case 'H':
+				config.height = atoi(optarg);
+			break;
 			case 'C':
 				main_parseconfig(optarg, &config);
 			break;
@@ -206,7 +212,7 @@ int main(int argc, char** argv)
 	} while (opt != -1);
 
 
-	GLMotor_t *motor = glmotor_create(argc, argv);
+	GLMotor_t *motor = glmotor_create(&config, argc, argv);
 
 	if (motor == NULL)
 		return -1;

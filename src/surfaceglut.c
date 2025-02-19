@@ -11,25 +11,17 @@
 #include "glmotor.h"
 #include "log.h"
 
-GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
+GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv)
 {
-	GLuint width = 640;
-	GLuint height = 480;
 	GLchar *name = "GLMotor";
 
 	int opt;
 	optind = 1;
 	do
 	{
-		opt = getopt(argc, argv, "w:h:n:");
+		opt = getopt(argc, argv, "n:");
 		switch (opt)
 		{
-			case 'w':
-				width = atoi(optarg);
-			break;
-			case 'h':
-				height = atoi(optarg);
-			break;
 			case 'n':
 				name = optarg;
 			break;
@@ -39,15 +31,15 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv)
 	glutInit(&argc, argv);
 
 	glutInitWindowPosition(-1, -1);
-	glutInitWindowSize(width, height);
+	glutInitWindowSize(config->width, config->height);
 
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE |GLUT_DEPTH);
 
 	glutCreateWindow(name);
 
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
-	motor->width = width;
-	motor->height = height;
+	motor->width = config->width;
+	motor->height = config->height;
 
 	return motor;
 }

@@ -23,6 +23,17 @@ typedef void (*GLMotor_Draw_func_t)(void *);
 
 typedef GLMOTOR_SURFACE_S GLMotor_Surface_t;
 
+typedef struct GLMotor_config_s GLMotor_config_t;
+struct GLMotor_config_s
+{
+	const char *vertexshader;
+	const char *fragmentshader;
+	const char *object;
+	const char *texture;
+	GLuint width;
+	GLuint height;
+};
+
 typedef struct GLMotor_list_s GLMotor_list_t;
 struct GLMotor_list_s
 {
@@ -92,7 +103,7 @@ struct GLMotor_Translate_s
 	GLfloat Z;
 };
 
-GLMOTOR_EXPORT GLMotor_t *glmotor_create(int argc, char** argv);
+GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv);
 GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertex, GLuint vertexSize, GLchar *fragment, GLuint fragmentSize);
 GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata);
 GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event);
