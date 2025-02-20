@@ -73,6 +73,18 @@ static int init_egl(void)
 }
 #endif
 
+GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv)
+{
+	GLMotor_Surface_t *window = surface_create(config, argc, argv);
+
+	GLMotor_t *motor = calloc(1, sizeof(*motor));
+	motor->width = config->width;
+	motor->height = config->height;
+	motor->surf = window;
+
+	return motor;
+}
+
 static void display_log(GLuint instance)
 {
 	GLint logSize = 0;
@@ -228,4 +240,11 @@ GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event)
 	evt->next = motor->events;
 	motor->events = evt;
 	return 0;
+}
+
+GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
+{
+	if (motor->surf)
+		surface_destroy(motor->surf);
+	free(motor);
 }

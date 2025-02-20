@@ -111,6 +111,9 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor);
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor);
 
+GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int argc, char** argv);
+GLMOTOR_EXPORT void surface_destroy(GLMotor_Surface_t *surface);
+
 typedef struct GLMotor_Texture_s GLMotor_Texture_t;
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, uint32_t fourcc, GLuint mipmaps, GLchar *map);
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const char *device, GLuint width, GLuint height, uint32_t fourcc);

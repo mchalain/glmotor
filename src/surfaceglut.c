@@ -8,10 +8,11 @@
 #include <GL/gl.h>
 #include <GL/freeglut.h>
 
+#define GLMOTOR_SURFACE_S int
 #include "glmotor.h"
 #include "log.h"
 
-GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv)
+GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int argc, char** argv)
 {
 	GLchar *name = "GLMotor";
 
@@ -35,13 +36,7 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, cha
 
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE |GLUT_DEPTH);
 
-	glutCreateWindow(name);
-
-	GLMotor_t *motor = calloc(1, sizeof(*motor));
-	motor->width = config->width;
-	motor->height = config->height;
-
-	return motor;
+	return (int)glutCreateWindow(name);
 }
 
 static void keyboardFeedback(unsigned char key, int x, int y)
@@ -81,7 +76,7 @@ GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
 	return -1;
 }
 
-GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
+GLMOTOR_EXPORT void surface_destroy(GLMotor_Surface_t *window)
 {
-	free(motor);
+	glutDestroyWindow((int)window);
 }
