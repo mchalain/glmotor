@@ -211,6 +211,7 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 	glUseProgram(programID);
 
 	motor->programID = programID;
+
 	return programID;
 }
 

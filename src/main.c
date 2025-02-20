@@ -179,6 +179,8 @@ int main(int argc, char** argv)
 		.fragmentshader = PKG_DATADIR"/simple.frag",
 		.object = NULL,
 		.texture = NULL,
+		.width = 640,
+		.height = 480,
 	};
 	int opt;
 	opterr = 0;
