@@ -21,7 +21,7 @@
 
 #define egl_dbg(...)
 
-static struct wl_display *display;
+static struct wl_display *display = NULL;
 static struct wl_compositor *compositor = NULL;
 static struct wl_shell *shell = NULL;
 static struct wl_seat *seat = NULL;
@@ -161,22 +161,22 @@ static struct wl_seat_listener seat_listener = {&seat_capabilities};
 static void registry_add_object (void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version) {
 	//warn("interface %s", interface);
 	if (!strcmp(interface, wl_compositor_interface.name)) {
-		warn("Compositor");
+		dbg("Compositor");
 		compositor = wl_registry_bind (registry, name, &wl_compositor_interface, 1);
 	}
 	else if (!strcmp(interface, wl_shell_interface.name)) {
-		warn("shell");
+		dbg("shell");
 		shell = wl_registry_bind (registry, name, &wl_shell_interface, 1);
 	}
 #ifdef HAVE_XKBCOMMON
 	else if (!strcmp(interface, wl_seat_interface.name)) {
-		warn("seat");
+		dbg("seat");
 		seat = wl_registry_bind (registry, name, &wl_seat_interface, 1);
 	}
 #endif
 #ifdef HAVE_XDG_SHELL
 	else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
-		warn("xdg_wm_base");
+		dbg("xdg_wm_base");
 		xdg_wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
 	}
 #endif
