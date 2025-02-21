@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <time.h>
 
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
@@ -178,43 +177,16 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	return window;
 }
 
-GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata)
+GLMOTOR_EXPORT int surface_running(GLMotor_Surface_t *surf, GLMotor_t *motor)
 {
-	eglMakeCurrent(egl_display, motor->surf->egl_surface, motor->surf->egl_surface, motor->surf->egl_context);
-
-	do
-	{
-		glmotor_swapbuffers(motor);
-		if (motor->eventcb && motor->events)
-		{
-			GLMotor_Event_t *evt = NULL;
-			for (evt = motor->events; evt != NULL; evt = evt->next)
-				motor->eventcb(motor->eventcbdata, evt);
-			free(evt);
-			motor->events = evt;
-		}
-		draw(drawdata);
-	} while (native->running(motor->surf->native_win, motor));
-	return 0;
+	if (surf->native_win)
+		return native->running(surf->native_win, motor);
+	return 1;
 }
 
-GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
+GLMOTOR_EXPORT GLuint surface_swapbuffers(GLMotor_Surface_t *surf)
 {
-#ifdef DEBUG
-	static uint32_t nbframes = 0;
-	nbframes++;
-	static time_t start = 0;
-	time_t now = time(NULL);
-	if (start == 0)
-		start = time(NULL);
-	else if (start < now)
-	{
-		dbg("glmotor: %lu fps", nbframes / (now - start));
-		start = now;
-		nbframes = 0;
-	}
-#endif
-	return eglSwapBuffers(egl_display, motor->surf->egl_surface);
+	return eglSwapBuffers(egl_display, surf->egl_surface);
 }
 
 GLMOTOR_EXPORT void surface_destroy(GLMotor_Surface_t *window)

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <time.h>
 
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
@@ -50,39 +49,19 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	}
 	glfwMakeContextCurrent(window);
 
+	glfwSetInputMode(motor->surf, GLFW_STICKY_KEYS, GL_TRUE);
 	return window;
 }
 
-GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata)
+GLMOTOR_EXPORT int surface_running(GLMotor_Surface_t *surf, GLMotor_t *motor)
 {
-	glfwSetInputMode(motor->surf, GLFW_STICKY_KEYS, GL_TRUE);
-	do
-	{
-		draw(drawdata);
-		glmotor_swapbuffers(motor);
-		glfwPollEvents();
-	}
-	while (glfwGetKey(motor->surf, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-			glfwWindowShouldClose(motor->surf) == 0 );
-	return 0;
+	glfwPollEvents();
+	return glfwGetKey(surf, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+			glfwWindowShouldClose(surf) == 0;
 }
 
-GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
+GLMOTOR_EXPORT GLuint surface_swapbuffers(GLMotor_t *motor)
 {
-#ifdef DEBUG
-	static uint32_t nbframes = 0;
-	nbframes++;
-	static time_t start = 0;
-	time_t now = time(NULL);
-	if (start == 0)
-		start = time(NULL);
-	else if (start < now)
-	{
-		dbg("glmotor: %lu fps", nbframes / (now - start));
-		start = now;
-		nbframes = 0;
-	}
-#endif
 	glfwSwapBuffers(motor->surf);
 	return 0;
 }

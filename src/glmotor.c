@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
 
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
@@ -241,6 +243,51 @@ GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event)
 	motor->events = evt;
 	return 0;
 }
+
+#ifndef GLUT
+GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata)
+{
+	int ret = 0;
+	do
+	{
+		draw(drawdata);
+#ifdef DEBUG
+		static uint32_t nbframes = 0;
+		nbframes++;
+		static time_t start = 0;
+		time_t now = time(NULL);
+		if (start == 0)
+			start = time(NULL);
+		else if (start < now)
+		{
+			dbg("glmotor: %lu fps", nbframes / (now - start));
+			start = now;
+			nbframes = 0;
+		}
+#endif
+		glmotor_swapbuffers(motor);
+		if (motor->eventcb && motor->events)
+		{
+			GLMotor_Event_t *evt = NULL;
+			for (evt = motor->events; evt != NULL; evt = evt->next)
+				motor->eventcb(motor->eventcbdata, evt);
+			free(evt);
+			motor->events = evt;
+		}
+		if (motor->surf)
+			ret = surface_running(motor->surf, motor);
+	} while (ret);
+	return 0;
+}
+
+GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
+{
+	if (motor->surf)
+		return surface_swapbuffers(motor->surf);
+	glFlush();
+	return 0;
+}
+#endif
 
 GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
 {
