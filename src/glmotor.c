@@ -56,13 +56,75 @@ static int init_glew()
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv)
 {
-	GLMotor_Surface_t *window = surface_create(config, argc, argv);
+	GLMotor_Surface_t *window = NULL;
+	int mode = 0;
+	int opt;
+	optind = 1;
+	do
+	{
+		opt = getopt(argc, argv, "O");
+		switch (opt)
+		{
+			case 'O':
+				mode = 1;
+			break;
+		}
+	} while (opt != -1);
+	glViewport(0, 0, config->width, config->height);
 
+	if (mode == 0)
+		window = surface_create(config, argc, argv);
+
+	GLuint fbo = 0, rbo_color = 0, rbo_depth = 0, rbo_stencil = 0, tex = 0;
+	if (window == NULL)
+	{
+		GLuint glget = 0;
+		glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &glget);
+		if (glget <= config->width)
+			warn("glmotor: width to large max %d", glget);
+		if (glget <= config->height)
+			warn("glmotor: width to height max %d", glget);
+
+		/*  Framebuffer */
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+#if 0
+		/* Color renderbuffer. */
+		glGenRenderbuffers(1, &rbo_color);
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo_color);
+		/* Storage must be one of: */
+		/* GL_RGBA4, GL_RGB565, GL_RGB5_A1, GL_DEPTH_COMPONENT16, GL_STENCIL_INDEX8. */
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, config->width, config->height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo_color);
+#else
+		glGenTextures(1, &tex);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, config->width, config->height, 0,
+					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+#endif
+
+		/* Sanity check. */
+		GLint ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (ret != GL_FRAMEBUFFER_COMPLETE)
+		{
+			err("glmotor: offscreen generator failed");
+			return NULL;
+		}
+	}
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
 	motor->width = config->width;
 	motor->height = config->height;
 	motor->surf = window;
-
+	motor->off.fbo = fbo;
+	motor->off.rbo_color = rbo_color;
+	motor->off.rbo_depth = rbo_depth;
+	motor->off.texture = tex;
 	return motor;
 }
 
