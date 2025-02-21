@@ -28,14 +28,14 @@ static int running = 1;
 static struct {
 	struct gbm_device *dev;
 	struct gbm_surface *surface;
-} gbm;
+} gbm = {0};
 
 static struct {
 	int fd;
 	drmModeModeInfo *mode;
 	uint32_t crtc_id;
 	uint32_t connector_id;
-} drm;
+} drm = {0};
 
 struct drm_fb {
 	struct gbm_bo *bo;
@@ -218,12 +218,14 @@ static void page_flip_handler(int fd, unsigned int frame,
 
 static EGLNativeDisplayType native_display()
 {
-	if (init_drm())
+	if (! gbm.dev)
 	{
-		return NULL;
+		if (init_drm())
+		{
+			return NULL;
+		}
+		gbm.dev = gbm_create_device(drm.fd);
 	}
-	gbm.dev = gbm_create_device(drm.fd);
-
 	return (EGLNativeDisplayType)gbm.dev;
 }
 
@@ -254,11 +256,16 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 		old_bo = gbm_surface_lock_front_buffer(gbm.surface);
 		struct drm_fb *fb;
 		fb = drm_fb_get_from_bo(old_bo);
+		if (fb == NULL)
+		{
+			return 0;
+		}
 
 		/* set mode: */
 		int ret = drmModeSetCrtc(drm.fd, drm.crtc_id, fb->fb_id, 0, 0,
 				&drm.connector_id, 1, drm.mode);
-		if (ret) {
+		if (ret)
+		{
 			err("glmotor: failed to set mode: %m");
 			return 0;
 		}
