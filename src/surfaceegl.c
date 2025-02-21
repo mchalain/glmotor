@@ -19,6 +19,8 @@
 #include "log.h"
 #include "eglnative.h"
 
+#define USE_PBUFFER 0
+
 static EGLDisplay* egl_display = NULL;
 
 struct eglnative_motor_s *native = NULL;
@@ -203,6 +205,14 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	{
 		eglChooseConfig(egl_display, attributes, &eglconfig, 1, &num_config);
 	}
+#if USE_PBUFFER
+	else
+	{
+		/// modify the value of EGL_SURFACE_TYPE
+		attributes[(sizeof (attributes) / sizeof(*attributes)) - 2] = EGL_PBUFFER_BIT;
+		eglChooseConfig(egl_display, attributes, &eglconfig, 1, &num_config);
+	}
+#endif
 
 	EGLint contextAttribs[] = {
 #ifdef EGL3
@@ -237,6 +247,20 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 			return NULL;
 		}
 	}
+#if USE_PBUFFER
+	else
+	{
+		EGLint pbufferAttribs[] = {
+			EGL_WIDTH, 640,
+			EGL_HEIGHT, 480,
+			EGL_NONE,
+		};
+		pbufferAttribs[1] = config->width;
+		pbufferAttribs[3] = config->height;
+
+		egl_surface = eglCreatePbufferSurface(egl_display, eglconfig, pbufferAttribs);
+	}
+#endif
 	GLMotor_Surface_t *window = calloc(1, sizeof(*window));
 	window->native_disp = display;
 	window->egl_context = egl_context;
