@@ -26,21 +26,34 @@ struct GLMotor_Scene_s
 {
 	GLMotor_t *motor;
 	GLMotor_list_t *objects;
+	GLuint buffermask;
 };
 static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height);
 
 GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 {
-	glClearColor(0.5, 0.5, 0.5, 1.0);
-	glViewport(0, 0, motor->width, motor->height);
+	GLuint buffermask = GL_COLOR_BUFFER_BIT;
+#if GLMOTOR_DEPTH_BUFFER
+	buffermask |= GL_DEPTH_BUFFER_BIT;
 	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+#endif
+
 #ifdef HAVE_GLESV2
 	glClearDepthf(1.0);
 #else
 	glClearDepth(1.0);
 #endif
-	glDepthFunc(GL_LESS);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glClearColor(1.0, 1.0, 1.0, 0.0);
+#if GLMOTOR_STENCIL_BUFFER
+	buffermask |= GL_STENCIL_BUFFER_BIT;
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glClearStencil(0);
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+#endif
+	glClear(buffermask);
 
 #ifndef HAVE_GLESV2
 	glMatrixMode(GL_PROJECTION);
@@ -54,6 +67,7 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 	GLMotor_Scene_t *scene;
 	scene = calloc(1, sizeof(*scene));
 	scene->motor = motor;
+	scene->buffermask = buffermask;
 	scene_setresolution(scene, motor->width, motor->height);
 	return scene;
 }
@@ -119,7 +133,7 @@ GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 {
 	GLint ret = 0;
 	GLMotor_t *motor = scene->motor;
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(scene->buffermask);
 #ifndef HAVE_GLESV2
 	glLoadIdentity();
 #endif

@@ -109,6 +109,22 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, cha
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
 #endif
 
+#if GLMOTOR_DEPTH_BUFFER
+		/* Depth renderbuffer. */
+		glGenRenderbuffers(1, &rbo_depth);
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, config->width, config->height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_depth);
+#endif
+
+#if GLMOTOR_STENCIL_BUFFER
+		/* Depth renderbuffer. */
+		glGenRenderbuffers(1, &rbo_stencil);
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo_stencil);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, config->width, config->height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo_stencil);
+#endif
+
 		/* Sanity check. */
 		GLint ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (ret != GL_FRAMEBUFFER_COMPLETE)

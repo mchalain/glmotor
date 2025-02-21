@@ -187,6 +187,12 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 			EGL_GREEN_SIZE, 8,
 			EGL_BLUE_SIZE, 8,
 	//		EGL_ALPHA_SIZE, 8,
+#if GLMOTOR_DEPTH_BUFFER
+			EGL_DEPTH_SIZE, 8,
+#endif
+#if GLMOTOR_STENCIL_BUFFER
+			EGL_STENCIL_SIZE, 8,
+#endif
 			EGL_RENDERABLE_TYPE, egl_ContextType,
 			EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 			EGL_NONE
