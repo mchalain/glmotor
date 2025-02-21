@@ -83,7 +83,6 @@ struct GLMotor_s
 {
 	GLuint programID;
 	GLMotor_Surface_t *surf;
-	GLMotor_Offscreen_t off;
 	GLuint width;
 	GLuint height;
 	GLMotor_Event_func_t eventcb;

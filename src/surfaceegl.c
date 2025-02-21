@@ -158,7 +158,17 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	if (display == NULL)
 	{
 		err("glmotor: unable to open the display");
+#if 1
+		static const int MAX_DEVICES = 4;
+		EGLDeviceEXT eglDevs[MAX_DEVICES];
+		EGLint numDevices;
+		eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+		dbg("num devices %d", numDevices);
+		for (int i = 0; i < numDevices && display == NULL; i++)
+			display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[0], 0);
+#else
 		display =  EGL_DEFAULT_DISPLAY;
+#endif
 	}
 	initEGLContext();
 
