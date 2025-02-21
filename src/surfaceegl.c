@@ -99,6 +99,7 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 
 	GLchar *name = "GLMotor";
 	native = natives[0];
+	EGLNativeDisplayType display = EGL_DEFAULT_DISPLAY;
 
 	int opt;
 	optind = 1;
@@ -127,13 +128,6 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 		return NULL;
 	warn("glmotor: use egl %s", native->name);
 
-	EGLNativeDisplayType display = native->display();
-	if (display == NULL)
-		err("glmotor: unable to open the display");
-
-	EGLNativeWindowType native_win;
-	native_win = native->createwindow(display, config->width, config->height, name);
-
 #ifdef DEBUG
 	dbg("glmotor: egl extensions");
 	const char * extensions = eglQueryString(display, EGL_EXTENSIONS);
@@ -157,9 +151,21 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	}
 #endif
 	init_egl();
+
+	display = native->display();
+	if (display == NULL)
+	{
+		err("glmotor: unable to open the display");
+		display =  EGL_DEFAULT_DISPLAY;
+	}
 	initEGLContext();
 
 	egl_display = eglGetDisplay(display);
+	if (egl_display == EGL_NO_DISPLAY)
+	{
+		err("glmotor: display not available");
+		return NULL;
+	}
 
 	EGLint majorVersion;
 	EGLint minorVersion;
@@ -177,15 +183,20 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	eglGetConfigs(egl_display, NULL, 0, &num_config);
 
 	EGLint attributes[] = {
-		EGL_RED_SIZE, 8,
-		EGL_GREEN_SIZE, 8,
-		EGL_BLUE_SIZE, 8,
-//		EGL_ALPHA_SIZE, 8,
-//		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-		EGL_NONE
-	};
-	EGLConfig eglconfig;
-	eglChooseConfig(egl_display, attributes, &eglconfig, 1, &num_config);
+			EGL_RED_SIZE, 8,
+			EGL_GREEN_SIZE, 8,
+			EGL_BLUE_SIZE, 8,
+	//		EGL_ALPHA_SIZE, 8,
+			EGL_RENDERABLE_TYPE, egl_ContextType,
+			EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+			EGL_NONE
+		};
+
+	EGLConfig eglconfig = EGL_NO_CONFIG_KHR;
+	if (display == native->display())
+	{
+		eglChooseConfig(egl_display, attributes, &eglconfig, 1, &num_config);
+	}
 
 	EGLint contextAttribs[] = {
 #ifdef EGL3
@@ -196,24 +207,29 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 #endif
 		EGL_NONE
 	};
-	EGLContext egl_context = eglCreateContext(egl_display, eglconfig, EGL_NO_CONTEXT, contextAttribs);
+	EGLContext egl_context = EGL_NO_CONTEXT;
+	egl_context = eglCreateContext(egl_display, eglconfig, EGL_NO_CONTEXT, contextAttribs);
 	if (egl_context == NULL)
 	{
 		err("glmotor: egl context error");
 		return NULL;
 	}
 
-	if (native_win == 0)
+	EGLSurface egl_surface = EGL_NO_SURFACE;
+	EGLNativeWindowType native_win = 0;
+	if (display == native->display())
 	{
-		err("glmotor: egl window not set");
-		return NULL;
-	}
-	EGLSurface egl_surface = eglCreateWindowSurface(egl_display, eglconfig, native_win, NULL);
+		native_win = native->createwindow(display, config->width, config->height, name);
 
-	if (egl_surface == NULL)
-	{
-		err("glmotor: egl surface error");
-		return NULL;
+		if (native_win != 0)
+		{
+			egl_surface = eglCreateWindowSurface(egl_display, eglconfig, native_win, NULL);
+		}
+		if (egl_surface == EGL_NO_SURFACE)
+		{
+			err("glmotor: egl surface error");
+			return NULL;
+		}
 	}
 	GLMotor_Surface_t *window = calloc(1, sizeof(*window));
 	window->native_disp = display;
@@ -221,7 +237,7 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	window->native_win = native_win;
 	window->egl_surface = egl_surface;
 
-	if (native->windowsize)
+	if (native->windowsize && window->native_win)
 		native->windowsize(window->native_win, &config->width, &config->height);
 
 	eglMakeCurrent(egl_display, window->egl_surface, window->egl_surface, window->egl_context);
