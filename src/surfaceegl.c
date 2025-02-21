@@ -5,8 +5,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#define EGL_EGLEXT_PROTOTYPES
+//#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
 #else
@@ -29,6 +30,55 @@ struct GLMotor_Surface_s
 	EGLSurface egl_surface;
 };
 
+PFNGLBINDVERTEXARRAYOESPROC glBindVertexArray = NULL;
+PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays = NULL;
+PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT = NULL;
+PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = NULL;
+
+static EGLint egl_ContextType = EGL_OPENGL_ES2_BIT;
+static int init_egl(void)
+{
+	glGenVertexArrays = (void *) eglGetProcAddress("glGenVertexArraysOES");
+	if(glGenVertexArrays == NULL)
+	{
+		return -1;
+	}
+	glBindVertexArray = (void *) eglGetProcAddress("glBindVertexArrayOES");
+	if(glBindVertexArray == NULL)
+	{
+		return -2;
+	}
+	eglQueryDevicesEXT =
+		(PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");
+	if(!eglQueryDevicesEXT)
+	{
+		err("ERROR: extension eglQueryDevicesEXT not available");
+		return -3;
+	}
+
+	eglGetPlatformDisplayEXT =
+		(PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+	if(!eglGetPlatformDisplayEXT)
+	{
+		err("ERROR: extension eglGetPlatformDisplayEXT not available");
+		return -4;
+	}
+	return 0;
+}
+
+static void initEGLContext()
+{
+#ifdef EGL_KHR_create_context
+	const char *extensions = eglQueryString ( egl_display, EGL_EXTENSIONS );
+
+	// check whether EGL_KHR_create_context is in the extension string
+	if ( extensions != NULL && strstr( extensions, "EGL_KHR_create_context" ) )
+	{
+		// extension is supported
+		egl_ContextType = EGL_OPENGL_ES3_BIT_KHR;
+	}
+#endif
+}
 GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int argc, char** argv)
 {
 	struct eglnative_motor_s *natives[] = {
@@ -106,6 +156,8 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 		}
 	}
 #endif
+	init_egl();
+	initEGLContext();
 
 	egl_display = eglGetDisplay(display);
 

@@ -7,9 +7,6 @@
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
 # include <GLES2/gl2ext.h>
-# ifdef HAVE_EGL
-#  include <EGL/egl.h>
-# endif
 # undef HAVE_GLEW
 #else
 # ifdef HAVE_GLEW
@@ -52,24 +49,6 @@ static int init_glew()
 	{
 	    err("glmotor: GL_ARB_fragment_shader error %m");
 		return -5;
-	}
-	return 0;
-}
-#else
-PFNGLBINDVERTEXARRAYOESPROC glBindVertexArray = NULL;
-PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays = NULL;
-
-static int init_egl(void)
-{
-	glGenVertexArrays = (void *) eglGetProcAddress("glGenVertexArraysOES");
-	if(glGenVertexArrays == NULL)
-	{
-		return -1;
-	}
-	glBindVertexArray = (void *) eglGetProcAddress("glBindVertexArrayOES");
-	if(glBindVertexArray == NULL)
-	{
-		return -2;
 	}
 	return 0;
 }
@@ -161,9 +140,6 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 #ifdef HAVE_GLEW
 	glewExperimental = 1;
 	if (init_glew())
-		return -1;
-#elif defined(HAVE_EGL)
-	if (init_egl())
 		return -1;
 #endif
 	warn("glmotor uses : %s", glGetString(GL_VERSION));
