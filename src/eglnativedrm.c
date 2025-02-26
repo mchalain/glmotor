@@ -313,9 +313,10 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 				motor->events = evt;
 			}
 			warn("user interrupted!");
-			break;
+			//break;
 		}
-		drmHandleEvent(drm.fd, &evctx);
+		else
+			drmHandleEvent(drm.fd, &evctx);
 	}
 
 	/* release last buffer to render on again: */
