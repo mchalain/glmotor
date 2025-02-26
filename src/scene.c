@@ -64,6 +64,13 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 #endif
+
+#if 0
+	/// this is good for £D object but not on plane object
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+#endif
+
 	GLMotor_Scene_t *scene;
 	scene = calloc(1, sizeof(*scene));
 	scene->motor = motor;
