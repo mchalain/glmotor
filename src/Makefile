@@ -12,6 +12,7 @@ glsurface_SOURCES-$(EGL:y=$(HAVE_LIBJPEG))+=eglnativejpeg.c
 glsurface_SOURCES-$(HAVE_WAYLAND_EGL)+=eglnativewl.c
 glsurface_LIBRARY-$(HAVE_WAYLAND_EGL)+=xkbcommon
 glsurface_SOURCES-$(EGL:y=$(HAVE_X11))+=eglnativex.c
+glsurface_SOURCES-$(EGL)+=eglnativepbuffer.c
 glsurface_SOURCES-$(EGL:y=$(HAVE_GBM:y=$(HAVE_LIBDRM)))+=eglnativedrm.c
 ifeq ($(WAYLAND),y)
 glsurface_LIBRARY-$(EGL)+=wayland-egl

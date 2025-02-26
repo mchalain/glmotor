@@ -75,72 +75,14 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, cha
 	if (mode == 0)
 		window = surface_create(config, argc, argv);
 
-	GLuint fbo = 0, rbo_color = 0, rbo_depth = 0, rbo_stencil = 0, tex = 0;
 	if (window == NULL)
 	{
-		GLuint glget = 0;
-		glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &glget);
-		if (glget <= config->width)
-			warn("glmotor: width to large max %d", glget);
-		if (glget <= config->height)
-			warn("glmotor: width to height max %d", glget);
-
-		/*  Framebuffer */
-		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-#if 0
-		/* Color renderbuffer. */
-		glGenRenderbuffers(1, &rbo_color);
-		glBindRenderbuffer(GL_RENDERBUFFER, rbo_color);
-		/* Storage must be one of: */
-		/* GL_RGBA4, GL_RGB565, GL_RGB5_A1, GL_DEPTH_COMPONENT16, GL_STENCIL_INDEX8. */
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, config->width, config->height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo_color);
-#else
-		glGenTextures(1, &tex);
-		glBindTexture(GL_TEXTURE_2D, tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, config->width, config->height, 0,
-					GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
-#endif
-
-#if GLMOTOR_DEPTH_BUFFER
-		/* Depth renderbuffer. */
-		glGenRenderbuffers(1, &rbo_depth);
-		glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, config->width, config->height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_depth);
-#endif
-
-#if GLMOTOR_STENCIL_BUFFER
-		/* Depth renderbuffer. */
-		glGenRenderbuffers(1, &rbo_stencil);
-		glBindRenderbuffer(GL_RENDERBUFFER, rbo_stencil);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, config->width, config->height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo_stencil);
-#endif
-
-		/* Sanity check. */
-		GLint ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (ret != GL_FRAMEBUFFER_COMPLETE)
-		{
-			err("glmotor: offscreen generator failed");
-			return NULL;
-		}
 	}
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
 	motor->width = config->width;
 	motor->height = config->height;
 	motor->surf = window;
-	motor->off.fbo = fbo;
-	motor->off.rbo_color = rbo_color;
-	motor->off.rbo_depth = rbo_depth;
-	motor->off.texture = tex;
+
 	return motor;
 }
 
@@ -336,9 +278,9 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 
 GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
 {
+	glFlush();
 	if (motor->surf)
 		return surface_swapbuffers(motor->surf);
-	glFlush();
 	return 0;
 }
 #endif
@@ -349,3 +291,111 @@ GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor)
 		surface_destroy(motor->surf);
 	free(motor);
 }
+
+GLMOTOR_EXPORT GLMotor_Offscreen_t *glmotor_offscreen_create(GLMotor_config_t *config)
+{
+	/**
+	 * the framebuffer is accessible only if the context is enabledd (eglMakeCurrent)
+	 **/
+	dbg("glmotor: offscreen generator");
+	GLuint fbo = 0, rbo[2] = {0}, rbo_depth = 0, rbo_stencil = 0, texture[2] = {0};
+	GLuint glget = 0;
+	glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &glget);
+	if (glget <= config->width)
+		warn("glmotor: width to large max %d", glget);
+	if (glget <= config->height)
+		warn("glmotor: width to height max %d", glget);
+
+	/*  Framebuffer */
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+#if 0
+	GLuint samples, format , width, height;
+
+	/* Color renderbuffer. */
+	glGenRenderbuffers(1, &rbo[0]);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo[0]);
+	/* Storage must be one of: */
+	/* GL_RGBA4, GL_RGB565, GL_RGB5_A1, GL_DEPTH_COMPONENT16, GL_STENCIL_INDEX8. */
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, config->width, config->height);
+	dbg("glmotor: render frame config size %ux%u", config->width, config->height);
+
+	//glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, &samples);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, &format);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
+
+#ifdef DOUBLE_IMAGEBUFFER
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo[1]);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, config->width, config->height);
+
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, &format);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
+#endif
+	dbg("glmotor: render frame size %ux%u %u, %u", width, height, samples, format);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo[0]);
+#else
+	glGenTextures(2, &texture[0]);
+
+	glBindTexture(GL_TEXTURE_2D, texture[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, config->width, config->height, 0,
+				GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#ifdef DOUBLE_IMAGEBUFFER
+	glBindTexture(GL_TEXTURE_2D, texture[1]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, config->width, config->height, 0,
+				GL_RGB, GL_UNSIGNED_SHORT_5_6_5, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#endif
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture[0], 0);
+#endif
+
+#if GLMOTOR_DEPTH_BUFFER
+	/* Depth renderbuffer. */
+	glGenRenderbuffers(1, &rbo_depth);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, config->width, config->height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_depth);
+#endif
+
+#if GLMOTOR_STENCIL_BUFFER
+	/* Depth renderbuffer. */
+	glGenRenderbuffers(1, &rbo_stencil);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo_stencil);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, config->width, config->height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo_stencil);
+#endif
+
+	/* Sanity check. */
+	GLint ret = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (ret != GL_FRAMEBUFFER_COMPLETE)
+	{
+		err("glmotor: offscreen generator failed");
+		return NULL;
+	}
+	GLMotor_Offscreen_t *off = calloc(1, sizeof(*off));
+	off->width = config->width;
+	off->height = config->height;
+	off->fbo = fbo;
+	off->rbo[0] = rbo[0];
+	off->rbo[1] = rbo[1];
+	off->rbo_depth = rbo_depth;
+	off->texture[0] = texture[0];
+	off->texture[1] = texture[1];
+	return off;
+}
+
+GLMOTOR_EXPORT void glmotor_offscreen_destroy(GLMotor_Offscreen_t *off)
+{
+	glDeleteFramebuffers(1, &off->fbo);
+	free(off);
+}
+

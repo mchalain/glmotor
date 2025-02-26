@@ -72,10 +72,12 @@ typedef int (*GLMotor_Event_func_t)(void *cbdata, GLMotor_Event_t *event);
 typedef struct GLMotor_Offscreen_s GLMotor_Offscreen_t;
 struct GLMotor_Offscreen_s
 {
+	GLuint width;
+	GLuint height;
 	GLuint fbo;
-	GLuint rbo_color;
+	GLuint rbo[2];
 	GLuint rbo_depth;
-	GLuint texture;
+	GLuint texture[2];
 };
 
 typedef struct GLMotor_s GLMotor_t;
@@ -159,5 +161,8 @@ GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const c
 GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target);
 GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene);
 GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene);
+
+GLMOTOR_EXPORT GLMotor_Offscreen_t *glmotor_offscreen_create(GLMotor_config_t *config);
+GLMOTOR_EXPORT void glmotor_offscreen_destroy(GLMotor_Offscreen_t *off);
 
 #endif

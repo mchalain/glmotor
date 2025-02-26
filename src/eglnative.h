@@ -19,5 +19,6 @@ extern struct eglnative_motor_s *eglnative_drm;
 extern struct eglnative_motor_s *eglnative_jpeg;
 extern struct eglnative_motor_s *eglnative_wl;
 extern struct eglnative_motor_s *eglnative_x;
+extern struct eglnative_motor_s *eglnative_pbuffer;
 
 #endif

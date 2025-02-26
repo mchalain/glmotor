@@ -10,6 +10,7 @@
 #include <EGL/eglext.h>
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
+# include <GLES2/gl2ext.h>
 #else
 # include <GL/gl.h>
 #endif
@@ -19,7 +20,9 @@
 #include "log.h"
 #include "eglnative.h"
 
-#define USE_PBUFFER 0
+#ifndef USE_PBUFFER
+#define USE_PBUFFER 1
+#endif
 
 static EGLDisplay* egl_display = NULL;
 
@@ -81,6 +84,7 @@ static void initEGLContext()
 	}
 #endif
 }
+
 GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int argc, char** argv)
 {
 	struct eglnative_motor_s *natives[] = {
@@ -95,6 +99,9 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 #endif
 #ifdef HAVE_LIBJPEG
 		eglnative_jpeg,
+#endif
+#if USE_PBUFFER
+		eglnative_pbuffer,
 #endif
 		NULL
 	};
@@ -157,17 +164,12 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	display = native->display();
 	if (display == NULL)
 	{
-		err("glmotor: unable to open the display");
-#if 1
-		static const int MAX_DEVICES = 4;
-		EGLDeviceEXT eglDevs[MAX_DEVICES];
-		EGLint numDevices;
-		eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
-		dbg("num devices %d", numDevices);
-		for (int i = 0; i < numDevices && display == NULL; i++)
-			display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[0], 0);
+#if USE_PBUFFER
+		native = eglnative_pbuffer;
+		display = native->display();
 #else
-		display =  EGL_DEFAULT_DISPLAY;
+		err("glmotor: display disconnected");
+		return NULL;
 #endif
 	}
 	initEGLContext();
@@ -307,7 +309,13 @@ GLMOTOR_EXPORT void surface_destroy(GLMotor_Surface_t *window)
 	eglTerminate(egl_display);
 }
 
-GLMOTOR_EXPORT EGLDisplay* glmotor_egldisplay(GLMotor_t *motor)
+EGLDisplay* glmotor_egldisplay(GLMotor_t *motor)
 {
 	return egl_display;
+}
+
+EGLContext glmotor_eglcontext(GLMotor_t *motor)
+{
+	GLMotor_Surface_t *window = motor->surf;
+	return window->egl_context;
 }
