@@ -342,6 +342,7 @@ static void native_windowsize(EGLNativeWindowType native_win, GLuint *width, GLu
 struct eglnative_motor_s *eglnative_drm = &(struct eglnative_motor_s)
 {
 	.name = "drm",
+	.type = EGL_WINDOW_BIT,
 	.display = native_display,
 	.createwindow = native_createwindow,
 	.windowsize = native_windowsize,

@@ -198,31 +198,28 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 			EGL_RED_SIZE, 8,
 			EGL_GREEN_SIZE, 8,
 			EGL_BLUE_SIZE, 8,
-	//		EGL_ALPHA_SIZE, 8,
+			EGL_ALPHA_SIZE, 8,
 #if GLMOTOR_DEPTH_BUFFER
 			EGL_DEPTH_SIZE, 8,
 #endif
 #if GLMOTOR_STENCIL_BUFFER
 			EGL_STENCIL_SIZE, 8,
 #endif
+			EGL_BUFFER_SIZE, 24,
+			EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
+			EGL_BIND_TO_TEXTURE_RGB , (native->type == EGL_PBUFFER_BIT)?EGL_TRUE:EGL_FALSE,
 			EGL_RENDERABLE_TYPE, egl_ContextType,
-			EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+			EGL_SURFACE_TYPE, native->type,
 			EGL_NONE
 		};
 
 	EGLConfig eglconfig = EGL_NO_CONFIG_KHR;
-	if (display == native->display())
+	EGLint status = eglChooseConfig(egl_display, attributes, &eglconfig, 1, &num_config);
+	if (status != EGL_TRUE || num_config == 0 || eglconfig == NULL)
 	{
-		eglChooseConfig(egl_display, attributes, &eglconfig, 1, &num_config);
+		err("glmotor: unable to find good eglconfig");
+		return NULL;
 	}
-#if USE_PBUFFER
-	else
-	{
-		/// modify the value of EGL_SURFACE_TYPE
-		attributes[(sizeof (attributes) / sizeof(*attributes)) - 2] = EGL_PBUFFER_BIT;
-		eglChooseConfig(egl_display, attributes, &eglconfig, 1, &num_config);
-	}
-#endif
 
 	EGLint contextAttribs[] = {
 #ifdef EGL3
@@ -243,58 +240,58 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 
 	EGLSurface egl_surface = EGL_NO_SURFACE;
 	EGLNativeWindowType native_win = 0;
-	if (display == native->display())
-	{
-		native_win = native->createwindow(display, config->width, config->height, name);
+	native_win = native->createwindow(display, config->width, config->height, name);
 
-		if (native_win != 0)
-		{
-			egl_surface = eglCreateWindowSurface(egl_display, eglconfig, native_win, NULL);
-		}
-		if (egl_surface == EGL_NO_SURFACE)
-		{
-			err("glmotor: egl surface error");
-			return NULL;
-		}
+	if (native_win != 0)
+	{
+		egl_surface = eglCreateWindowSurface(egl_display, eglconfig, native_win, NULL);
 	}
 #if USE_PBUFFER
 	else
 	{
 		EGLint pbufferAttribs[] = {
-			EGL_WIDTH, 640,
-			EGL_HEIGHT, 480,
+			EGL_WIDTH, 1,
+			EGL_HEIGHT, 1,
+			EGL_TEXTURE_FORMAT, EGL_TEXTURE_RGBA,
+			EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
 			EGL_NONE,
 		};
-		pbufferAttribs[1] = config->width;
-		pbufferAttribs[3] = config->height;
+		//pbufferAttribs[1] = config->width;
+		//pbufferAttribs[3] = config->height;
 
 		egl_surface = eglCreatePbufferSurface(egl_display, eglconfig, pbufferAttribs);
 	}
 #endif
+	if (egl_surface == EGL_NO_SURFACE)
+	{
+		err("glmotor: egl surface error");
+		return NULL;
+	}
+
 	GLMotor_Surface_t *window = calloc(1, sizeof(*window));
 	window->native_disp = display;
 	window->egl_context = egl_context;
 	window->native_win = native_win;
 	window->egl_surface = egl_surface;
 
-	if (native->windowsize && window->native_win)
-		native->windowsize(window->native_win, &config->width, &config->height);
-
 	eglMakeCurrent(egl_display, window->egl_surface, window->egl_surface, window->egl_context);
+
+	if (native->windowsize)
+		native->windowsize(window->native_win, &config->width, &config->height);
 
 	return window;
 }
 
 GLMOTOR_EXPORT int surface_running(GLMotor_Surface_t *surf, GLMotor_t *motor)
 {
-	if (surf->native_win)
-		return native->running(surf->native_win, motor);
-	return 1;
+	return native->running(surf->native_win, motor);
 }
 
 GLMOTOR_EXPORT GLuint surface_swapbuffers(GLMotor_Surface_t *surf)
 {
-	return eglSwapBuffers(egl_display, surf->egl_surface);
+	if (surf->native_win)
+		return eglSwapBuffers(egl_display, surf->egl_surface);
+	return 0;
 }
 
 GLMOTOR_EXPORT void surface_destroy(GLMotor_Surface_t *window)

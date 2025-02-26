@@ -352,6 +352,7 @@ static void native_destroy(EGLNativeDisplayType native_display)
 struct eglnative_motor_s *eglnative_wl = &(struct eglnative_motor_s)
 {
 	.name = "wl",
+	.type = EGL_WINDOW_BIT,
 	.display = native_display,
 	.createwindow = native_createwindow,
 	.windowsize = NULL,

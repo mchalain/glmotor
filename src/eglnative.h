@@ -6,6 +6,7 @@
 struct eglnative_motor_s
 {
 	const char *name;
+	EGLint type;
 	EGLNativeDisplayType (*display)();
 	EGLNativeWindowType (*createwindow)(EGLNativeDisplayType native_display,
 							GLuint width, GLuint height, const GLchar *name);
