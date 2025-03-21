@@ -72,6 +72,7 @@ typedef int (*GLMotor_Event_func_t)(void *cbdata, GLMotor_Event_t *event);
 typedef struct GLMotor_Offscreen_s GLMotor_Offscreen_t;
 struct GLMotor_Offscreen_s
 {
+	size_t size;
 	GLuint width;
 	GLuint height;
 	GLuint fbo;
