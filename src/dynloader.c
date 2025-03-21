@@ -193,7 +193,7 @@ GLMOTOR_EXPORT GLuint program_load(const char *vertex, const char *fragments[], 
 	return programID;
 }
 
-GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, const char *fileName)
+GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, const char *fileName, GLuint programID)
 {
 	FILE* pFile = NULL;
 	GLint fileSize = 0;
@@ -255,6 +255,7 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		(nnormals && nnormals != npoints))
 		err("glmotor: object file misformated not enought colors, textures or normals");
 	GLMotor_Object_t *obj = object_create(motor, name, npoints, nfaces);
+	object_setprogram(obj, programID);
 	GLuint numline = 0;
 	do
 	{

@@ -153,7 +153,7 @@ int parseevent(void *data, GLMotor_Event_t *event)
 	return 0;
 }
 
-GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name)
+GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name, GLuint programID)
 {
 	GLMotor_Object_t *obj = NULL;
 	GLfloat vVertices[] = {
@@ -182,6 +182,7 @@ GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name)
 	GLuint nfaces = sizeof(vFaces) / sizeof(GLuint) / 3;
 
 	obj = object_create(motor, name, size, nfaces);
+	object_setprogram(obj, programID);
 	object_appendpoint(obj, size, &vVertices[0]);
 	object_appendcolor(obj, ncolors, &vColors[0]);
 
@@ -243,9 +244,9 @@ int main(int argc, char** argv)
 
 	GLMotor_Object_t *obj = NULL;
 	if (config.object == NULL)
-		obj = load_staticobject(motor, "object");
+		obj = load_staticobject(motor, "object", programID);
 	else
-		obj = object_load(motor, "object", config.object);
+		obj = object_load(motor, "object", config.object, programID);
 	if (obj == NULL)
 	{
 		err("glmotor: impossible to create object");

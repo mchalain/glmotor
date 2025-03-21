@@ -122,11 +122,15 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 	 obj->move[ 5] =
 	 obj->move[10] =
 	 obj->move[15] = 1;
-	obj->programID = motor->programID[0];
-
-	_object_setup(obj, motor->programID[0]);
 
 	return obj;
+}
+
+GLMOTOR_EXPORT GLint object_setprogram(GLMotor_Object_t *obj, GLuint programID)
+{
+	obj->programID = programID;
+	_object_setup(obj, programID);
+	return 1;
 }
 
 GLMOTOR_EXPORT GLuint object_appendpoint(GLMotor_Object_t *obj, GLuint npoints, GLfloat points[])
