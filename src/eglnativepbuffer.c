@@ -13,10 +13,6 @@
 #include "glmotor.h"
 #include "eglnative.h"
 
-#include  <X11/Xlib.h>
-#include  <X11/Xatom.h>
-#include  <X11/Xutil.h>
-
 extern EGLDisplay* glmotor_egldisplay(GLMotor_t *motor);
 extern EGLContext glmotor_eglcontext(GLMotor_t *motor);
 
