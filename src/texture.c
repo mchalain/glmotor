@@ -66,15 +66,6 @@ struct GLMotor_Texture_s
 
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, uint32_t fourcc, GLuint mipmaps, GLchar *map)
 {
-	GLuint texture  = glGetUniformLocation(motor->programID[0], "vTexture");
-	if (texture == -1)
-	{
-		err("glmotor: try to apply texture but shader doesn't contain 'vTexture'");
-		return NULL;
-	}
-	glUniform1i(texture, 0);
-	glActiveTexture(GL_TEXTURE0);
-
 	dbg("glmotor: create texture");
 	GLMotor_Texture_t *tex = NULL;
 
@@ -154,12 +145,25 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 
 	tex = calloc(1, sizeof(*tex));
 	tex->ID = textureID;
-	tex->texture = texture;
 	tex->width = width;
 	tex->height = height;
 	tex->stride = stride;
 	tex->fourcc = fourcc;
 	return tex;
+}
+
+GLMOTOR_EXPORT GLint texture_setprogram(GLMotor_Texture_t *tex, GLuint programID)
+{
+	GLuint texture  = glGetUniformLocation(programID, "vTexture");
+	if (texture == -1)
+	{
+		err("glmotor: try to apply texture but shader doesn't contain 'vTexture'");
+		return -1;
+	}
+	glUniform1i(texture, 0);
+	glActiveTexture(GL_TEXTURE0);
+	tex->texture = texture;
+	return 0;
 }
 
 GLMOTOR_EXPORT GLint texture_draw(GLMotor_Texture_t *tex)
@@ -375,15 +379,6 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	if (fourcc == 0)
 		fourcc = FOURCC('A','B','2','4');
 
-	GLuint texture  = glGetUniformLocation(motor->programID[0], "vTexture");
-	if (texture == -1)
-	{
-		err("glmotor: try to apply texture but shader doesn't contain 'vTexture'");
-		return NULL;
-	}
-	glUniform1i(texture, 0);
-	glActiveTexture(GL_TEXTURE0);
-
 #ifdef HAVE_EGL
 	if (! eglCreateImageKHR)
 		eglCreateImageKHR = (void *) eglGetProcAddress("eglCreateImageKHR");
@@ -508,7 +503,6 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	GLMotor_Texture_t *tex;
 	tex = calloc(1, sizeof(*tex));
 	tex->ID = 0x12345678;
-	tex->texture = texture;
 	tex->width = width;
 	tex->height = height;
 	tex->stride = stride;

@@ -342,6 +342,7 @@ GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t
 	if (obj->texture)
 		texture_destroy(obj->texture);
 	obj->texture = tex;
+	texture_setprogram(tex, obj->programID);
 }
 
 GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloat uvs[])
