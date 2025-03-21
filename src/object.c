@@ -56,8 +56,12 @@ struct GLMotor_Object_s
 	GLMotor_Texture_t *texture;
 };
 
-static void _object_setup(GLMotor_Object_t *obj, GLuint programID)
+static GLuint _object_setup(GLMotor_Object_t *obj, GLuint programID)
 {
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
 	// assign vertices (points or positions)
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
 	GLsizeiptr size = obj->maxpoints * sizeof(GLfloat) * 3;
@@ -68,7 +72,10 @@ static void _object_setup(GLMotor_Object_t *obj, GLuint programID)
 		err("vertex shader doesn't contain vPosition entry");
 	}
 	else
+	{
+		glVertexAttribPointer(obj->position, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glEnableVertexAttribArray(obj->position);
+	}
 
 	if (obj->maxfaces)
 	{
@@ -83,7 +90,10 @@ static void _object_setup(GLMotor_Object_t *obj, GLuint programID)
 	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
 	obj->color = glGetAttribLocation(obj->programID, "vColor");
 	if (obj->color >= 0)
+	{
+		glVertexAttribPointer(obj->color, COLOR_COMPONENTS, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glEnableVertexAttribArray(obj->color);
+	}
 
 	// assign uvs
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[3]);
@@ -91,7 +101,10 @@ static void _object_setup(GLMotor_Object_t *obj, GLuint programID)
 	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
 	obj->uv = glGetAttribLocation(obj->programID, "vUV");
 	if (obj->uv >= 0)
+	{
+		glVertexAttribPointer(obj->uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glEnableVertexAttribArray(obj->uv);
+	}
 
 	// assign normal
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[4]);
@@ -99,20 +112,23 @@ static void _object_setup(GLMotor_Object_t *obj, GLuint programID)
 	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
 	obj->normal = glGetAttribLocation(obj->programID, "vNormal");
 	if (obj->normal >= 0)
+	{
+		glVertexAttribPointer(obj->normal, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glEnableVertexAttribArray(obj->normal);
+	}
+
+	glBindVertexArray(0);
+	return vao;
 }
 
 GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *name, GLuint maxpoints, GLuint maxfaces)
 {
-	GLuint VAO;
-	glGenVertexArrays(1, &VAO);
 	GLuint *objID = calloc(4, sizeof(*objID));
 	glGenBuffers(5, objID);
 
 	GLMotor_Object_t *obj;
 	obj = calloc(1, sizeof(*obj));
 	obj->name = strdup(name);
-	obj->vertexArrayID = VAO;
 	obj->motor = motor;
 	obj->ID = objID;
 	obj->maxpoints = maxpoints;
@@ -129,7 +145,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 GLMOTOR_EXPORT GLint object_setprogram(GLMotor_Object_t *obj, GLuint programID)
 {
 	obj->programID = programID;
-	_object_setup(obj, programID);
+	obj->vertexArrayID = _object_setup(obj, programID);
 	return 1;
 }
 
@@ -372,35 +388,6 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 	glUseProgram(obj->programID);
 
 	glBindVertexArray(obj->vertexArrayID);
-	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
-	glEnableVertexAttribArray(obj->position);
-	glVertexAttribPointer(obj->position, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	if (obj->ncolors == 1)
-	{
-		glVertexAttrib4fv(obj->color, obj->defaultcolor);
-	}
-	else if (obj->ncolors)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, obj->ID[2]);
-		glEnableVertexAttribArray(obj->color);
-		glVertexAttribPointer(obj->color, COLOR_COMPONENTS, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	}
-	if (obj->nuvs)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, obj->ID[3]);
-		glEnableVertexAttribArray(obj->uv);
-		glVertexAttribPointer(obj->uv, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	}
-	if (obj->nnormals)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, obj->ID[4]);
-		glEnableVertexAttribArray(obj->normal);
-		glVertexAttribPointer(obj->normal, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	}
-	if (obj->nfaces)
-	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
-	}
 	if (obj->texture)
 		ret = texture_draw(obj->texture);
 
@@ -411,14 +398,7 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 		glDrawElements(GL_TRIANGLE_STRIP, obj->nfaces * 3, GL_UNSIGNED_INT, 0);
 	else
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, obj->npoints);
-	glDisableVertexAttribArray(obj->position);
-	if (obj->ncolors)
-		glDisableVertexAttribArray(obj->color);
-	if (obj->nuvs)
-		glDisableVertexAttribArray(obj->uv);
-	if (obj->nnormals)
-		glDisableVertexAttribArray(obj->normal);
-
+	glBindVertexArray(0);
 	return ret;
 }
 
