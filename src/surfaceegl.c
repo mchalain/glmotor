@@ -299,7 +299,9 @@ GLMOTOR_EXPORT int surface_running(GLMotor_Surface_t *surf, GLMotor_t *motor)
 GLMOTOR_EXPORT GLuint surface_swapbuffers(GLMotor_Surface_t *surf)
 {
 	if (surf->native_win)
-		return eglSwapBuffers(egl_display, surf->egl_surface);
+	{
+		eglSwapBuffers(egl_display, surf->egl_surface);
+	}
 	return 0;
 }
 
