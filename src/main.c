@@ -19,6 +19,30 @@ static config_t configfile = {0};
 static GLfloat g_angle = 0.0;
 static GLfloat g_camera[] = {0.0, 0.0, 100.0};
 
+#ifdef HAVE_LIBCONFIG
+static void program_parsesetting(config_setting_t *parser, GLMotor_config_t *config)
+{
+	const char *value;
+	if (config_setting_lookup_string(parser, "vertex", &value) == CONFIG_TRUE)
+	{
+		config->vertexshader = value;
+	}
+	if (config_setting_lookup_string(parser, "fragment", &value) == CONFIG_TRUE)
+	{
+		config->fragmentshader[0] = value;
+	}
+	config_setting_t *fragments = config_setting_lookup(parser, "fragments");
+	if (fragments != NULL)
+	{
+		for (config->nbfragmentshaders; config->nbfragmentshaders < MAX_FRAGS &&
+				config->nbfragmentshaders < config_setting_length(fragments); config->nbfragmentshaders++)
+		{
+			config->fragmentshader[config->nbfragmentshaders] = config_setting_get_string_elem(fragments, config->nbfragmentshaders);
+		}
+	}
+}
+#endif
+
 static int main_parseconfig(const char *file, GLMotor_config_t *config)
 {
 	const char *value;
@@ -35,23 +59,7 @@ static int main_parseconfig(const char *file, GLMotor_config_t *config)
 	{
 		config->height = intvalue;
 	}
-	if (config_lookup_string(&configfile, "vertex", &value) == CONFIG_TRUE)
-	{
-		config->vertexshader = value;
-	}
-	if (config_lookup_string(&configfile, "fragment", &value) == CONFIG_TRUE)
-	{
-		config->fragmentshader[0] = value;
-	}
-	config_setting_t *fragments = config_lookup(&configfile, "fragments");
-	if (fragments != NULL)
-	{
-		for (config->nbfragmentshaders; config->nbfragmentshaders < MAX_FRAGS &&
-				config->nbfragmentshaders < config_setting_length(fragments); config->nbfragmentshaders++)
-		{
-			config->fragmentshader[config->nbfragmentshaders] = config_setting_get_string_elem(fragments, config->nbfragmentshaders);
-		}
-	}
+	program_parsesetting(config_root_setting(&configfile), config);
 	if (config_lookup_string(&configfile, "object", &value) == CONFIG_TRUE)
 	{
 		config->object = value;
