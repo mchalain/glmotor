@@ -45,7 +45,7 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 	glClearDepth(1.0);
 #endif
 
-	glClearColor(1.0, 1.0, 1.0, 0.0);
+	glClearColor(1.0, 1.0, 1.0, 1.0);
 #if GLMOTOR_STENCIL_BUFFER
 	buffermask |= GL_STENCIL_BUFFER_BIT;
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
