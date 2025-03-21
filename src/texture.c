@@ -66,7 +66,7 @@ struct GLMotor_Texture_s
 
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width, GLuint height, uint32_t fourcc, GLuint mipmaps, GLchar *map)
 {
-	GLuint texture  = glGetUniformLocation(motor->programID, "vTexture");
+	GLuint texture  = glGetUniformLocation(motor->programID[0], "vTexture");
 	if (texture == -1)
 	{
 		err("glmotor: try to apply texture but shader doesn't contain 'vTexture'");
@@ -375,7 +375,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	if (fourcc == 0)
 		fourcc = FOURCC('A','B','2','4');
 
-	GLuint texture  = glGetUniformLocation(motor->programID, "vTexture");
+	GLuint texture  = glGetUniformLocation(motor->programID[0], "vTexture");
 	if (texture == -1)
 	{
 		err("glmotor: try to apply texture but shader doesn't contain 'vTexture'");

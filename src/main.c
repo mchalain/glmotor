@@ -239,7 +239,7 @@ int main(int argc, char** argv)
 	if (motor == NULL)
 		return -1;
 
-	glmotor_load(motor, config.vertexshader, config.fragmentshader, config.nbfragmentshaders);
+	GLuint programID = glmotor_load(motor, config.vertexshader, config.fragmentshader, config.nbfragmentshaders);
 
 	GLMotor_Object_t *obj = NULL;
 	if (config.object == NULL)

@@ -23,6 +23,7 @@ extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays;
 #endif
 
 #define MAX_FRAGS 4
+#define MAX_PROGS 4
 
 typedef void (*GLMotor_Draw_func_t)(void *);
 
@@ -87,7 +88,8 @@ struct GLMotor_Offscreen_s
 typedef struct GLMotor_s GLMotor_t;
 struct GLMotor_s
 {
-	GLuint programID;
+	GLuint programID[MAX_PROGS];
+	int nbprograms;
 	GLMotor_Surface_t *surf;
 	GLuint width;
 	GLuint height;
@@ -122,7 +124,7 @@ struct GLMotor_Translate_s
 };
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv);
-GLMOTOR_EXPORT void glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragments[], int nbframents);
+GLMOTOR_EXPORT GLuint glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragments[], int nbframents);
 GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata);
 GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event);
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata);

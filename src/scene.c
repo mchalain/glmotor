@@ -105,8 +105,11 @@ static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint h
 	};
 	vResolution[0] /= (float)width;
 	vResolution[1] /= (float)height;
-	GLuint resID = glGetUniformLocation(motor->programID, "vResolution");
-	glUniform2fv(resID, 1, vResolution);
+	for (int i = 0; i < motor->nbprograms; i++)
+	{
+		GLuint resID = glGetUniformLocation(motor->programID[i], "vResolution");
+		glUniform2fv(resID, 1, vResolution);
+	}
 
 	return 0;
 }
@@ -144,7 +147,6 @@ GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 #ifndef HAVE_GLESV2
 	glLoadIdentity();
 #endif
-	glUseProgram(motor->programID);
 
 	for (GLMotor_list_t *it = scene->objects; it != NULL; it = it->next)
 	{

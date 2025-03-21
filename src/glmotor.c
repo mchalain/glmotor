@@ -116,9 +116,17 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, cha
 	return motor;
 }
 
-GLMOTOR_EXPORT void glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragments[], int nbfragments)
+GLMOTOR_EXPORT GLuint glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragments[], int nbfragments)
 {
-	motor->programID = program_load(vertex, fragments, nbfragments);
+	/**
+	 * As the texture of the resulting of the first program is not mapped on the input of the next one
+	 * it is useless to add several programs.
+	 * It may be usefull for special object as screen.
+	 */
+	GLuint programID = program_load(vertex, fragments, nbfragments);
+	if (motor->nbprograms < MAX_PROGS)
+		motor->programID[motor->nbprograms++] = programID;
+	return programID;
 }
 
 GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata)
