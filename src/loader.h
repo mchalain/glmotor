@@ -3,7 +3,7 @@
 
 #include "glmotor.h"
 
-GLMOTOR_EXPORT GLuint glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragments[], int nbframents);
+GLMOTOR_EXPORT GLuint program_load(const char *vertex, const char *fragments[], int nbfragments);
 GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, const char *file);
 
 #endif

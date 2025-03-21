@@ -122,7 +122,7 @@ struct GLMotor_Translate_s
 };
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv);
-GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, const GLchar *vertex, GLuint vertexSize, const GLchar *fragments[], GLuint fragmentSize[], int nbfragments);
+GLMOTOR_EXPORT void glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragments[], int nbframents);
 GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata);
 GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event);
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata);
