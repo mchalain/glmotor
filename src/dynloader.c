@@ -125,31 +125,6 @@ static GLuint load_shader(GLenum type, const GLchar *sources[], GLuint size[], i
 
 static GLuint program_build(const GLchar *vertexSource, GLuint vertexSize, const GLchar *fragmentSource[], GLuint fragmentSize[], int nbfragments)
 {
-	warn("glmotor uses : %s", glGetString(GL_VERSION));
-	warn("glmotor uses : %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-#ifdef DEBUG
-	dbg("glmotor: gl extensions");
-	const char * extensions = glGetString(GL_EXTENSIONS);
-	const char * end;
-	if (extensions)
-		end = strchr(extensions, ' ');
-	else
-		dbg("\tnone");
-	while (extensions != NULL)
-	{
-		size_t length = strlen(extensions);
-		if (end)
-			length = end - extensions;
-		dbg("\t%.*s", length, extensions);
-		extensions = end;
-		if (end)
-		{
-			extensions++;
-			end = strchr(extensions, ' ');
-		}
-	}
-#endif
-
 	GLuint vertexID = load_shader(GL_VERTEX_SHADER, &vertexSource, &vertexSize, 1);
 	if (vertexID == 0)
 		return 0;
