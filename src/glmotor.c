@@ -126,7 +126,7 @@ static void deleteProgram(GLuint programID, GLuint fragmentID, GLuint vertexID)
 		glDeleteShader(vertexID);
 }
 
-static GLuint load_shader(GLenum type, GLchar *source, GLuint size)
+static GLuint load_shader(GLenum type, const GLchar *sources[], GLuint size[], int nbsources)
 {
 	GLuint shaderID;
 
@@ -137,10 +137,7 @@ static GLuint load_shader(GLenum type, GLchar *source, GLuint size)
 		return 0;
 	}
 
-	if (size == -1)
-		glShaderSource(shaderID, 1, (const GLchar**)(&source), NULL);
-	else
-		glShaderSource(shaderID, 1, (const GLchar**)(&source), &size);
+	glShaderSource(shaderID, nbsources, sources, size);
 	glCompileShader(shaderID);
 
 	GLint compilationStatus = 0;
@@ -155,7 +152,7 @@ static GLuint load_shader(GLenum type, GLchar *source, GLuint size)
 	return shaderID;
 }
 
-GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLuint vertexSize, GLchar *fragmentSource, GLuint fragmentSize)
+GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, const GLchar *vertexSource, GLuint vertexSize, const GLchar *fragmentSource[], GLuint fragmentSize[], int nbfragments)
 {
 #ifdef HAVE_GLEW
 	glewExperimental = 1;
@@ -187,10 +184,10 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 	}
 #endif
 
-	GLuint vertexID = load_shader(GL_VERTEX_SHADER, vertexSource, vertexSize);
+	GLuint vertexID = load_shader(GL_VERTEX_SHADER, &vertexSource, &vertexSize, 1);
 	if (vertexID == 0)
 		return 0;
-	GLuint fragmentID = load_shader(GL_FRAGMENT_SHADER, fragmentSource, fragmentSize);
+	GLuint fragmentID = load_shader(GL_FRAGMENT_SHADER, fragmentSource, fragmentSize, nbfragments);
 	if (fragmentID == 0)
 		return 0;
 
@@ -199,7 +196,7 @@ GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertexSource, GLui
 	glAttachShader(programID, vertexID);
 	glAttachShader(programID, fragmentID);
 
-	glBindAttribLocation(motor->programID, 0, "vPosition");
+	glBindAttribLocation(programID, 0, "vPosition");
 
 	glLinkProgram(programID);
 

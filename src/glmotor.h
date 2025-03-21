@@ -22,6 +22,8 @@ extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays;
 #define FOURCC(a,b,c,d)	((a << 0) | (b << 8) | (c << 16) | (d << 24))
 #endif
 
+#define MAX_FRAGS 4
+
 typedef void (*GLMotor_Draw_func_t)(void *);
 
 typedef GLMOTOR_SURFACE_S GLMotor_Surface_t;
@@ -30,11 +32,12 @@ typedef struct GLMotor_config_s GLMotor_config_t;
 struct GLMotor_config_s
 {
 	const char *vertexshader;
-	const char *fragmentshader;
+	const char *fragmentshader[MAX_FRAGS];
 	const char *object;
 	const char *texture;
 	GLuint width;
 	GLuint height;
+	int nbfragmentshaders;
 };
 
 typedef struct GLMotor_list_s GLMotor_list_t;
@@ -119,7 +122,7 @@ struct GLMotor_Translate_s
 };
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv);
-GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, GLchar *vertex, GLuint vertexSize, GLchar *fragment, GLuint fragmentSize);
+GLMOTOR_EXPORT GLuint glmotor_build(GLMotor_t *motor, const GLchar *vertex, GLuint vertexSize, const GLchar *fragments[], GLuint fragmentSize[], int nbfragments);
 GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata);
 GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event);
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata);

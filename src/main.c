@@ -41,7 +41,16 @@ static int main_parseconfig(const char *file, GLMotor_config_t *config)
 	}
 	if (config_lookup_string(&configfile, "fragment", &value) == CONFIG_TRUE)
 	{
-		config->fragmentshader = value;
+		config->fragmentshader[0] = value;
+	}
+	config_setting_t *fragments = config_lookup(&configfile, "fragments");
+	if (fragments != NULL)
+	{
+		for (config->nbfragmentshaders; config->nbfragmentshaders < MAX_FRAGS &&
+				config->nbfragmentshaders < config_setting_length(fragments); config->nbfragmentshaders++)
+		{
+			config->fragmentshader[config->nbfragmentshaders] = config_setting_get_string_elem(fragments, config->nbfragmentshaders);
+		}
 	}
 	if (config_lookup_string(&configfile, "object", &value) == CONFIG_TRUE)
 	{
@@ -176,7 +185,8 @@ int main(int argc, char** argv)
 {
 	GLMotor_config_t config = {
 		.vertexshader = PKG_DATADIR"/simple.vert",
-		.fragmentshader = PKG_DATADIR"/simple.frag",
+		.fragmentshader = {PKG_DATADIR"/simple.frag", NULL, NULL, NULL},
+		.nbfragmentshaders = 0,
 		.object = NULL,
 		.texture = NULL,
 		.width = 640,
@@ -205,21 +215,23 @@ int main(int argc, char** argv)
 				config.vertexshader = optarg;
 			break;
 			case 'f':
-				config.fragmentshader = optarg;
+				if (config.nbfragmentshaders < MAX_FRAGS)
+					config.fragmentshader[config.nbfragmentshaders ++] = optarg;
 			break;
 			case 't':
 				config.texture = optarg;
 			break;
 		}
 	} while (opt != -1);
-
+	if (config.nbfragmentshaders == 0)
+		config.nbfragmentshaders = 1;
 
 	GLMotor_t *motor = glmotor_create(&config, argc, argv);
 
 	if (motor == NULL)
 		return -1;
 
-	glmotor_load(motor, config.vertexshader, config.fragmentshader);
+	glmotor_load(motor, config.vertexshader, config.fragmentshader, config.nbfragmentshaders);
 
 	GLMotor_Object_t *obj = NULL;
 	if (config.object == NULL)

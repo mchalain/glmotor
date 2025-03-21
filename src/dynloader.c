@@ -57,22 +57,35 @@ static GLint readFile(const char* fileName, char** fileContent)
 	return fileSize;
 }
 
-GLMOTOR_EXPORT GLuint glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragment)
+GLMOTOR_EXPORT GLuint glmotor_load(GLMotor_t *motor, const char *vertex, const char *fragments[], int nbfragments)
 {
 	GLchar* vertexSource = NULL;
-	GLchar* fragmentSource = NULL;
+	GLuint vertexSize = 0;
+	vertexSize = readFile(vertex, &vertexSource);
 
-	GLuint vertexSize = readFile(vertex, &vertexSource);
-	GLuint fragmentSize = readFile(fragment, &fragmentSource);
+	GLchar* fragmentSource[MAX_FRAGS] = {0};
+	GLuint fragmentSize[MAX_FRAGS] = {0};
+	for (int i = 0; i < nbfragments; i++)
+	{
+		fragmentSize[i] = readFile(fragments[i], &fragmentSource[i]);
+		if (fragmentSize[i] == 0)
+		{
+			nbfragments--;
+			break;
+		}
+	}
 
-	if ( !vertexSource || !fragmentSource )
+	if ( !vertexSource || !fragmentSource[0] )
 	{
 		return 0;
 	}
 
-	GLuint programID = glmotor_build(motor, vertexSource, vertexSize, fragmentSource, fragmentSize);
+	GLuint programID = glmotor_build(motor, vertexSource, vertexSize, fragmentSource, fragmentSize, nbfragments);
+	for (int i = 0; i < nbfragments; i++)
+	{
+		free(fragmentSource[i]);
+	}
 	free(vertexSource);
-	free(fragmentSource);
 	return programID;
 }
 
