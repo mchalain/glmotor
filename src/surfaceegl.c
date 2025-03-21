@@ -261,14 +261,12 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	else
 	{
 		EGLint pbufferAttribs[] = {
-			EGL_WIDTH, 1,
-			EGL_HEIGHT, 1,
+			EGL_WIDTH, config->width,
+			EGL_HEIGHT, config->height,
 			EGL_TEXTURE_FORMAT, EGL_TEXTURE_RGBA,
 			EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
 			EGL_NONE,
 		};
-		//pbufferAttribs[1] = config->width;
-		//pbufferAttribs[3] = config->height;
 
 		egl_surface = eglCreatePbufferSurface(egl_display, eglconfig, pbufferAttribs);
 	}
