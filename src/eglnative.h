@@ -21,4 +21,6 @@ extern struct eglnative_motor_s *eglnative_wl;
 extern struct eglnative_motor_s *eglnative_x;
 extern struct eglnative_motor_s *eglnative_pbuffer;
 
+extern void* pbufferconsumerhdl;
+
 #endif

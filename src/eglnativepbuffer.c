@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <dlfcn.h>
 
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
@@ -12,9 +14,21 @@
 #include "log.h"
 #include "glmotor.h"
 #include "eglnative.h"
+#include "pbufferconsumer/pbufferconsumer.h"
+
+#ifndef USE_FRAMEBUFFER
+#define USE_FRAMEBUFFER 1
+#endif
 
 extern EGLDisplay* glmotor_egldisplay(GLMotor_t *motor);
 extern EGLContext glmotor_eglcontext(GLMotor_t *motor);
+
+void *(*pbufferconsumer_create)(GLMotor_t *motor, uint32_t width, uint32_t height);
+void (*pbufferconsumer_destroy)(void * arg);
+void (*pbufferconsumer_queue)(void * arg, GLuint client, pbufferconsumer_metadata_t data);
+static void *pbufferconsumer = NULL;
+
+void* pbufferconsumerhdl = NULL;
 
 static EGLNativeDisplayType *display = NULL;
 static GLMotor_Offscreen_t *offscreen = NULL;
@@ -22,6 +36,18 @@ static GLMotor_config_t config = {0};
 
 static EGLNativeDisplayType native_display()
 {
+	if (pbufferconsumerhdl)
+	{
+		pbufferconsumer_create = dlsym(pbufferconsumerhdl, "pbufferconsumer_create");
+		pbufferconsumer_destroy = dlsym(pbufferconsumerhdl, "pbufferconsumer_destroy");
+		pbufferconsumer_queue = dlsym(pbufferconsumerhdl, "pbufferconsumer_queue");
+		if (pbufferconsumer_create == NULL)
+		{
+			err("glmotor: library errpr %s", dlerror());
+			dlclose(pbufferconsumerhdl);
+			pbufferconsumerhdl = NULL;
+		}
+	}
 #if 0
 	static const int MAX_DEVICES = 4;
 	EGLDeviceEXT eglDevs[MAX_DEVICES];
@@ -39,43 +65,27 @@ static EGLNativeDisplayType native_display()
 static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor)
 {
 	GLboolean running = GL_TRUE;
-	EGLDisplay* egl_display = glmotor_egldisplay(motor);
-	EGLContext egl_context = glmotor_eglcontext(motor);
-	EGLint target = EGL_GL_TEXTURE_2D;
-	EGLClientBuffer client = (EGLClientBuffer)offscreen->texture[0];
+	GLuint client = 0;
+	pbufferconsumer_metadata_t metadata = {
+		.target = EGL_GL_TEXTURE_2D,
+		.type = GL_RGBA,
+	};
+#if USE_FRAMEBUFFER
+	metadata.target = EGL_GL_TEXTURE_2D;
+	client = (EGLClientBuffer)offscreen->texture[0];
 	if (offscreen->rbo[0] != 0)
 	{
-		target = EGL_GL_RENDERBUFFER;
-		client = (EGLClientBuffer)offscreen->rbo[0];
+		metadata.target = EGL_GL_RENDERBUFFER;
+		client = offscreen->rbo[0];
 	}
-	EGLImage image = eglCreateImage(egl_display, egl_context,
-			target, client, NULL);
-
-	if (image)
+#endif
+	if (pbufferconsumerhdl && pbufferconsumer == NULL)
 	{
-		int texture_dmabuf_fd = 0;
-		struct texture_storage_metadata_t
-		{
-			uint32_t fourcc;
-			uint32_t offset;
-			uint32_t stride;
-		} texture_storage_metadata;
-
-		PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC eglExportDMABUFImageQueryMESA =
-			(PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC)eglGetProcAddress("eglExportDMABUFImageQueryMESA");
-		PFNEGLEXPORTDMABUFIMAGEMESAPROC eglExportDMABUFImageMESA =
-			(PFNEGLEXPORTDMABUFIMAGEMESAPROC)eglGetProcAddress("eglExportDMABUFImageMESA");
-
-		eglExportDMABUFImageQueryMESA(egl_display, image,
-									&texture_storage_metadata.fourcc, NULL, NULL);
-		eglExportDMABUFImageMESA(egl_display, image, &texture_dmabuf_fd,
-									&texture_storage_metadata.stride, &texture_storage_metadata.offset);
-		warn("glmotor: image(%d) %.4s (%#x), %lu", texture_dmabuf_fd, (char*)&texture_storage_metadata.fourcc, texture_storage_metadata.fourcc, texture_storage_metadata.stride);
-		close(texture_dmabuf_fd);
+		pbufferconsumer = pbufferconsumer_create(motor, config.width, config.height);
 	}
-	else
+	if (pbufferconsumerhdl && pbufferconsumer)
 	{
-		err("glmotor: pbuffer image failed (%#x)", eglGetError());
+		pbufferconsumer_queue(pbufferconsumer, client, metadata);
 	}
 	return running;
 }
@@ -89,20 +99,27 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType display, GLu
 
 static void native_windowsize(EGLNativeWindowType native_win, GLuint *width, GLuint *height)
 {
+#if USE_FRAMEBUFFER
+	/// offscreen is create here because eglContext must be ready
 	offscreen = glmotor_offscreen_create(&config);
 	dbg("glmotor: offscreen %p", offscreen);
 	if (offscreen == NULL)
 		exit(1);
+#endif
 	*width = config.width;
 	*height = config.height;
 }
 
 static void native_destroy(EGLNativeDisplayType native_display)
 {
+#if USE_FRAMEBUFFER
 	if (offscreen)
 	{
 		glmotor_offscreen_destroy(offscreen);
 	}
+#endif
+	if (pbufferconsumerhdl && pbufferconsumer)
+		pbufferconsumer_destroy(pbufferconsumer);
 }
 
 struct eglnative_motor_s *eglnative_pbuffer = &(struct eglnative_motor_s)

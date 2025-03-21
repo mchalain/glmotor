@@ -5,6 +5,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <dlfcn.h>
+
 //#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
@@ -114,7 +116,7 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	optind = 1;
 	do
 	{
-		opt = getopt(argc, argv, "n:N:");
+		opt = getopt(argc, argv, "n:N:L:");
 		switch (opt)
 		{
 			case 'n':
@@ -128,6 +130,13 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 						native = natives[i];
 						break;
 					}
+				}
+			break;
+			case 'L':
+				pbufferconsumerhdl = dlopen(optarg, RTLD_LAZY | RTLD_GLOBAL);
+				if (pbufferconsumerhdl == NULL)
+				{
+					err("glmotor: library errpr %s", dlerror());
 				}
 			break;
 		}
