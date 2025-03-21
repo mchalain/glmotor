@@ -56,57 +56,58 @@ struct GLMotor_Object_s
 	GLMotor_Texture_t *texture;
 };
 
+static void _object_setup(GLMotor_Object_t *obj, GLuint programID)
+{
+	// assign vertices (points or positions)
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[0]);
+	GLsizeiptr size = obj->maxpoints * sizeof(GLfloat) * 3;
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	obj->position = glGetAttribLocation(programID, "vPosition");
+	if (obj->position < 0)
+	{
+		err("vertex shader doesn't contain vPosition entry");
+	}
+	else
+		glEnableVertexAttribArray(obj->position);
+
+	if (obj->maxfaces)
+	{
+		// assign faces
+		GLsizeiptr size = obj->maxfaces * sizeof(GLuint) * 3;
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ID[1]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	}
+	// assign colors
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[2]);
+	size = obj->maxpoints * sizeof(GLfloat) * 3;
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	obj->color = glGetAttribLocation(obj->programID, "vColor");
+	if (obj->color >= 0)
+		glEnableVertexAttribArray(obj->color);
+
+	// assign uvs
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[3]);
+	size = obj->maxpoints * sizeof(GLfloat) * 2;
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	obj->uv = glGetAttribLocation(obj->programID, "vUV");
+	if (obj->uv >= 0)
+		glEnableVertexAttribArray(obj->uv);
+
+	// assign normal
+	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[4]);
+	size = obj->maxpoints * sizeof(GLfloat) * 3;
+	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
+	obj->normal = glGetAttribLocation(obj->programID, "vNormal");
+	if (obj->normal >= 0)
+		glEnableVertexAttribArray(obj->normal);
+}
+
 GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *name, GLuint maxpoints, GLuint maxfaces)
 {
 	GLuint VAO;
 	glGenVertexArrays(1, &VAO);
 	GLuint *objID = calloc(4, sizeof(*objID));
 	glGenBuffers(5, objID);
-
-	GLuint programID = motor->programID[0];
-
-	// assign vertices (points or positions)
-	glBindBuffer(GL_ARRAY_BUFFER, objID[0]);
-	GLsizeiptr size = maxpoints * sizeof(GLfloat) * 3;
-	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
-	GLuint position = glGetAttribLocation(programID, "vPosition");
-	if (position < 0)
-	{
-		err("vertex shader doesn't contain vPosition entry");
-	}
-	else
-		glEnableVertexAttribArray(position);
-
-	if (maxfaces)
-	{
-		// assign faces
-		GLsizeiptr size = maxfaces * sizeof(GLuint) * 3;
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objID[1]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
-	}
-	// assign colors
-	glBindBuffer(GL_ARRAY_BUFFER, objID[2]);
-	size = maxpoints * sizeof(GLfloat) * 3;
-	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
-	GLint color = glGetAttribLocation(programID, "vColor");
-	if (color >= 0)
-		glEnableVertexAttribArray(color);
-
-	// assign uvs
-	glBindBuffer(GL_ARRAY_BUFFER, objID[3]);
-	size = maxpoints * sizeof(GLfloat) * 2;
-	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
-	GLint uv = glGetAttribLocation(programID, "vUV");
-	if (uv >= 0)
-		glEnableVertexAttribArray(uv);
-
-	// assign normal
-	glBindBuffer(GL_ARRAY_BUFFER, objID[4]);
-	size = maxpoints * sizeof(GLfloat) * 3;
-	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
-	GLint normal = glGetAttribLocation(programID, "vNormal");
-	if (normal >= 0)
-		glEnableVertexAttribArray(normal);
 
 	GLMotor_Object_t *obj;
 	obj = calloc(1, sizeof(*obj));
@@ -121,11 +122,9 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 	 obj->move[ 5] =
 	 obj->move[10] =
 	 obj->move[15] = 1;
-	obj->position = position;
-	obj->color = color;
-	obj->uv = uv;
-	obj->normal = normal;
-	obj->programID = programID;
+	obj->programID = motor->programID[0];
+
+	_object_setup(obj, motor->programID[0]);
 
 	return obj;
 }
