@@ -30,6 +30,10 @@
 #define __HTTPSERVER_LOG_H__
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUC__
 #  define UNUSED(x) UNUSED_ ## x __attribute__((__unused__))
 #else
@@ -44,6 +48,10 @@
 #else
 # define dbg(...)
 # define dbg_caller(...)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
