@@ -291,8 +291,10 @@ static EGLNativeWindowType native_createwindow(EGLNativeDisplayType dislay, GLui
 		err("glmotor: surface creation error %m");
 		return NULL;
 	}
+#ifdef HAVE_XKBCOMMON
 	if (seat)
 		wl_seat_add_listener (seat, &seat_listener, window);
+#endif
 
 #ifdef HAVE_XDG_SHELL
 	if (xdg_wm_base != NULL)
