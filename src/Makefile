@@ -1,3 +1,5 @@
+subdir-$(EGL)+=pbufferconsumer.mk
+
 ifneq ($(findstring $(HAVE_GBM) $(HAVE_WAYLAND_EGL)$(HAVE_X11),y),)
 NEED_NATIVEJPEG=y
 endif
