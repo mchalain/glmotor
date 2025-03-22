@@ -116,7 +116,7 @@ static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint h
 
 GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t *obj)
 {
-	GLMotor_list_t *entry = calloc(1, sizeof(entry));
+	GLMotor_list_t *entry = calloc(1, sizeof(*entry));
 	entry->entity = obj;
 	entry->next = scene->objects;
 	scene->objects = entry;
