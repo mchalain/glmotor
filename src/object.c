@@ -140,7 +140,7 @@ static GLuint _object_setup(GLMotor_Object_t *obj, GLuint programID)
 
 GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *name, GLuint maxpoints, GLuint maxfaces)
 {
-	GLuint *objID = calloc(4, sizeof(*objID));
+	GLuint *objID = calloc(5, sizeof(*objID));
 	glGenBuffers(5, objID);
 
 	GLMotor_Object_t *obj;
