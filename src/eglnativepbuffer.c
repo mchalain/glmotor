@@ -72,7 +72,7 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 	};
 #if USE_FRAMEBUFFER
 	metadata.target = EGL_GL_TEXTURE_2D;
-	client = (EGLClientBuffer)offscreen->texture[0];
+	client = offscreen->texture[0];
 	if (offscreen->rbo[0] != 0)
 	{
 		metadata.target = EGL_GL_RENDERBUFFER;
