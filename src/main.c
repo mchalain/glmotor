@@ -50,7 +50,10 @@ static int main_parseconfig(const char *file, GLMotor_config_t *config)
 #ifdef HAVE_LIBCONFIG
 	config_init(&configfile);
 	if (config_read_file(&configfile, file) != CONFIG_TRUE)
+	{
+		err("glmotor: Configuration file error");
 		return -1;
+	}
 	GLuint intvalue;
 	if (config_lookup_int(&configfile, "width", &intvalue) == CONFIG_TRUE)
 	{
@@ -240,7 +243,6 @@ int main(int argc, char** argv)
 
 	if (motor == NULL)
 		return -1;
-
 	GLuint programID = glmotor_load(motor, config.vertexshader, config.fragmentshader, config.nbfragmentshaders);
 
 	GLMotor_Object_t *obj = NULL;
