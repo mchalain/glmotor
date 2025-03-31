@@ -33,27 +33,16 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 
 	fd_set fds;
 	FD_ZERO(&fds);
-	FD_SET(0, &fds);
 
 	int ret = select(1, &fds, NULL, NULL, &tv);
-	if (ret < 0) {
+	if (ret < 0)
+	{
 		err("glmotor: select err: %m");
 		return 0;
-	} else if (ret == 0) {
+	}
+	else if (ret == 0)
+	{
 		return 1;
-	} else if (FD_ISSET(0, &fds)) {
-		char c = 0;
-		if (read(0, &c, 1) > 0)
-		{
-			GLMotor_Event_t *evt = calloc(1, sizeof(*evt));
-			evt->type = EVT_KEY;
-			evt->data.key.mode = 0;
-			evt->data.key.code = 0;
-			evt->data.key.value = c;
-			evt->next = motor->events;
-			motor->events = evt;
-		}
-		warn("user interrupted!");
 	}
 
 	unsigned char *buffer =

@@ -89,49 +89,8 @@ static void keyboard_key (void *data, struct wl_keyboard *keyboard, uint32_t ser
 			case XKB_KEY_Escape:
 				running = 0;
 			break;
-			case XKB_KEY_Left:
-				keycode = 0x72;
-			break;
-			case XKB_KEY_Right:
-				keycode = 0x71;
-			break;
-			case XKB_KEY_Up:
-				keycode = 0x6f;
-			break;
-			case XKB_KEY_Down:
-				keycode = 0x74;
-			break;
-			case XKB_KEY_Control_L:
-				mode |= MODE_CTRL;
-			break;
-			case XKB_KEY_Shift_L:
-				mode |= MODE_SHIFT;
-			break;
 		}
-		GLMotor_Event_t evt = {
-			.type = EVT_KEY,
-			.data = {
-				.key = {
-					.mode = mode,
-					.code = keycode,
-					.value = 0,
-				},
-			},
-		};
-		glmotor_newevent(window->motor, evt);
 		egl_dbg("the key %s was pressed %#x", key_name, keysym);
-	}
-	else if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
-		xkb_keysym_t keysym = xkb_state_key_get_one_sym (xkb_state, key+8);
-		switch (keysym)
-		{
-			case XKB_KEY_Control_L:
-				mode &= ~MODE_CTRL;
-			break;
-			case XKB_KEY_Shift_L:
-				mode &= ~MODE_SHIFT;
-			break;
-		}
 	}
 }
 

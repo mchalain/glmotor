@@ -129,21 +129,6 @@ GLMOTOR_EXPORT GLuint glmotor_load(GLMotor_t *motor, const char *vertex, const c
 	return programID;
 }
 
-GLMOTOR_EXPORT void glmotor_seteventcb(GLMotor_t *motor, GLMotor_Event_func_t cb, void * cbdata)
-{
-	motor->eventcb = cb;
-	motor->eventcbdata = cbdata;
-}
-
-GLMOTOR_EXPORT GLuint glmotor_newevent(GLMotor_t *motor, GLMotor_Event_t event)
-{
-	GLMotor_Event_t *evt = calloc(1, sizeof(*evt));
-	memmove(evt, &event, sizeof(*evt));
-	evt->next = motor->events;
-	motor->events = evt;
-	return 0;
-}
-
 #ifndef GLUT
 GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, void *drawdata)
 {
@@ -166,14 +151,6 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 		}
 #endif
 		glmotor_swapbuffers(motor);
-		if (motor->eventcb && motor->events)
-		{
-			GLMotor_Event_t *evt = NULL;
-			for (evt = motor->events; evt != NULL; evt = evt->next)
-				motor->eventcb(motor->eventcbdata, evt);
-			free(evt);
-			motor->events = evt;
-		}
 		if (motor->surf)
 			ret = surface_running(motor->surf, motor);
 	} while (ret);

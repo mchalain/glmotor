@@ -46,38 +46,8 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 		XNextEvent(display, &xev);
 		if (xev.type == KeyPress)
 		{
-			if (XLookupString(&xev.xkey,&text,1,&key,0)==1)
-			{
-				if (text == 'q')
-					running = GL_FALSE;
-			}
-			if (xev.xkey.keycode == 0x32)
-				mode |= MODE_SHIFT;
-			else if (xev.xkey.keycode == 0x25)
-				mode |= MODE_CTRL;
-			else if (xev.xkey.keycode == 0x09)
+			if (xev.xkey.keycode == 0x09)
 				running = GL_FALSE;
-			else
-			{
-				GLMotor_Event_t evt = {
-					.type = EVT_KEY,
-					.data = {
-						.key = {
-							.mode = mode,
-							.code = xev.xkey.keycode,
-							.value = text,
-						},
-					},
-				};
-				glmotor_newevent(motor, evt);
-			}
-		}
-		if (xev.type == KeyRelease)
-		{
-			if (xev.xkey.keycode == 0x32)
-				mode &= ~MODE_SHIFT;
-			if (xev.xkey.keycode == 0x25)
-				mode &= ~MODE_CTRL;
 		}
 		if ( xev.type == DestroyNotify )
 			running = GL_FALSE;

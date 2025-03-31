@@ -96,67 +96,6 @@ static void render(void *data)
 	scene_draw(scene);
 }
 
-int parseevent(void *data, GLMotor_Event_t *event)
-{
-	GLMotor_Scene_t *scene = (GLMotor_Scene_t *)data;
-	GLMotor_Object_t *obj = scene_getobject(scene, "object");
-	GLMotor_Rotate_t rotate = { 0 };
-	rotate.ra.X = 0; rotate.ra.Y = 0; rotate.ra.Z = 0; rotate.ra.A = M_PI_4/100;
-	GLMotor_Rotate_t *rot = NULL;
-	GLMotor_Translate_t translate = {.X = 0.0, .Y = 0.0, .Z = 0.0, .L = 0.01};
-	GLMotor_Translate_t *tr = NULL;
-	//const GLfloat *move = object_positionmatrix(obj);
-	if (event->type == EVT_KEY)
-	{
-		switch (event->data.key.code)
-		{
-		case 0x71:
-			if (event->data.key.mode & MODE_SHIFT)
-				rotate.ra.Y = 1;
-			else if (event->data.key.mode & MODE_CTRL)
-				rotate.ra.Z = 1;
-			else
-				translate.X = 1;
-		break;
-		case 0x72:
-			rotate.ra.A *= -1;
-			translate.L = - translate.L;
-			if (event->data.key.mode & MODE_SHIFT)
-				rotate.ra.Y = 1;
-			else if (event->data.key.mode & MODE_CTRL)
-				rotate.ra.Z = 1;
-			else
-				translate.X = 1;
-		break;
-		case 0x6F:
-			if (event->data.key.mode & MODE_SHIFT)
-				rotate.ra.X = 1;
-			else if (event->data.key.mode & MODE_CTRL)
-				translate.Z = 1;
-			else
-				translate.Y = 1;
-		break;
-		case 0x74:
-			rotate.ra.A *= -1;
-			translate.L *= -1;
-			if (event->data.key.mode & MODE_SHIFT)
-				rotate.ra.X = 1;
-			else if (event->data.key.mode & MODE_CTRL)
-				translate.Z = 1;
-			else
-				translate.Y = 1;
-		break;
-		}
-		if (rotate.ra.X || rotate.ra.Y || rotate.ra.Z)
-			rot = &rotate;
-		if (translate.X || translate.Y || translate.Z)
-			tr = &translate;
-	}
-	if (rot || tr)
-		object_move(obj, tr, rot);
-	return 0;
-}
-
 GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name, GLuint programID)
 {
 	GLMotor_Object_t *obj = NULL;
@@ -279,9 +218,7 @@ int main(int argc, char** argv)
 	scene_movecamera(scene, g_camera, target);
 #endif
 
-#if 1
-	glmotor_seteventcb(motor, parseevent, scene);
-#else
+#if 0
 	GLMotor_Rotate_t rotate = { 0 };
 	rotate.ra.X = 0; rotate.ra.Y = 0; rotate.ra.Z = 1; rotate.ra.A = M_PI_4/100;
 	object_appendkinematic(obj, NULL, NULL, -50);
