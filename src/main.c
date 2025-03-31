@@ -86,12 +86,15 @@ static void render(void *data)
 	g_angle += M_2_PI / 100;
 	scene_movecamera(scene, g_camera, NULL);
 #endif
-	GLMotor_Object_t *obj = scene_getobject(scene, "object");
-	GLMotor_Rotate_t *rot = NULL;
-	GLMotor_Translate_t *tr = NULL;
-	if (object_kinematic(obj, &tr, &rot) != -1)
+	GLMotor_Object_t *obj = scene_nextobject(scene, NULL);
+	for (; obj != NULL; obj = scene_nextobject(scene, obj))
 	{
-		object_move(obj, tr, rot);
+		GLMotor_Rotate_t *rot = NULL;
+		GLMotor_Translate_t *tr = NULL;
+		if (object_kinematic(obj, &tr, &rot) != -1)
+		{
+			object_move(obj, tr, rot);
+		}
 	}
 	scene_draw(scene);
 }

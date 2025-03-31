@@ -164,6 +164,7 @@ typedef struct GLMotor_Scene_s GLMotor_Scene_t;
 GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor);
 GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t *obj);
 GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const char *name);
+GLMOTOR_EXPORT GLMotor_Object_t *scene_nextobject(GLMotor_Scene_t *scene, GLMotor_Object_t *prev);
 GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target);
 GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene);
 GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene);

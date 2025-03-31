@@ -139,6 +139,18 @@ GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const c
 
 }
 
+GLMOTOR_EXPORT GLMotor_Object_t *scene_nextobject(GLMotor_Scene_t *scene, GLMotor_Object_t *prev)
+{
+	if (prev == NULL)
+		return scene->objects->entity;
+	for (GLMotor_list_t *entry = scene->objects; entry != NULL; entry = entry->next)
+	{
+		if (entry->entity == prev && entry->next)
+			return entry->next->entity;
+	}
+	return NULL;
+}
+
 GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 {
 	GLint ret = 0;
