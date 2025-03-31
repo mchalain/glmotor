@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
@@ -11,6 +12,9 @@
 #include "glmotor.h"
 #include "loader.h"
 #include "log.h"
+#ifdef HAVE_LIBINPUT
+#include "input.h"
+#endif
 #ifdef HAVE_LIBCONFIG
 #include <libconfig.h>
 
@@ -221,6 +225,10 @@ int main(int argc, char** argv)
 	scene_movecamera(scene, g_camera, target);
 #endif
 
+#ifdef HAVE_LIBINPUT
+	GLMotor_Input_t *input = NULL;
+	input = input_create(scene);
+#else
 #if 0
 	GLMotor_Translate_t tr = {0};
 	tr.coord.L = 0.001;
@@ -236,11 +244,13 @@ int main(int argc, char** argv)
 	object_appendkinematic(obj, NULL, NULL, -50);
 	rotate.ra.A *= -1;
 	object_appendkinematic(obj, NULL, &rotate, -100);
-	object_appendkinematic(obj, NULL, NULL, 50);
-	rotate.ra.A *= -1;
-	object_appendkinematic(obj, NULL, &rotate, 50);
+#endif
 #endif
 	glmotor_run(motor, render, scene);
 	scene_destroy(scene);
 	glmotor_destroy(motor);
+#ifdef HAVE_LIBINPUT
+	if (input)
+		input_destroy(input);
+#endif
 }

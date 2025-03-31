@@ -334,11 +334,8 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, 
 	}
 	if (tr && tr->coord.L != 0)
 	{
-		if (tr->coord.X + tr->coord.Y + tr->coord.Z != 1)
-			tr->coord.L /= normalizef(tr->coord.X, tr->coord.Y, tr->coord.Z);
-		obj->move[12] += tr->coord.X * tr->coord.L;
-		obj->move[13] += tr->coord.Y * tr->coord.L;
-		obj->move[14] += tr->coord.Z * tr->coord.L;
+		for (int i = 0; i < 3; i++)
+			obj->move[12 + i] += tr->mat[i] * tr->coord.L;
 	}
 }
 
@@ -415,6 +412,8 @@ GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Transl
 	GLMotor_Kinematic_t *kin = obj->kinematic;
 	if (repeats || kin == NULL)
 		kin = calloc(1, sizeof(*kin));
+	if (kin->rest == 0)
+		memset(kin, 0, sizeof(*kin));
 	if (tr)
 	{
 		for (int i = 0; i < sizeof(*tr)/sizeof(*tr->mat); i++)
@@ -435,7 +434,7 @@ GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Transl
 	}
 	else
 		repeats = 1;
-	kin->rest = kin->repeats += repeats;
+	kin->rest = kin->repeats = repeats;
 	kin->rest *= (kin->repeats < 0)? -1: 1;
 	obj->kinematic = kin;
 	pthread_mutex_unlock(&obj->kinmutex);
