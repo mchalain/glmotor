@@ -89,8 +89,11 @@ static int init_drm(void)
 	drmModeConnector *connector = NULL;
 	drmModeEncoder *encoder = NULL;
 	int i, area;
-
-	drm.fd = open("/dev/dri/card0", O_RDWR);
+	char *device = "/dev/dri/card0";
+	if (getenv("DRM"))
+		device = getenv("DRM");
+	dbg("glmotor: drm device %s", device);
+	drm.fd = open(device, O_RDWR);
 
 	if (drm.fd < 0) {
 		err("glmotor: could not open drm device");
