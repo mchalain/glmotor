@@ -114,13 +114,16 @@ union GLMotor_Rotate_s
 	GLfloat mq[16];
 };
 
-typedef struct GLMotor_Translate_s GLMotor_Translate_t;
-struct GLMotor_Translate_s
+typedef union GLMotor_Translate_s GLMotor_Translate_t;
+union GLMotor_Translate_s
 {
-	GLfloat L;
-	GLfloat X;
-	GLfloat Y;
-	GLfloat Z;
+	GLfloat mat[4];
+	struct {
+		GLfloat L;
+		GLfloat X;
+		GLfloat Y;
+		GLfloat Z;
+	} coord;
 };
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv);

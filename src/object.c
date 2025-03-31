@@ -240,6 +240,26 @@ static void mat4_multiply4(GLfloat A[], GLfloat B[], GLfloat AB[])
 	memcpy(AB, TMP, sizeof(TMP));
 }
 
+static void mat4_add4(GLfloat A[], GLfloat B[], GLfloat AB[])
+{
+	AB[ 0] = A[ 0] + B[ 0];
+	AB[ 1] = A[ 1] + B[ 1];
+	AB[ 2] = A[ 2] + B[ 2];
+	AB[ 3] = A[ 3] + B[ 3];
+	AB[ 4] = A[ 4] + B[ 4];
+	AB[ 5] = A[ 5] + B[ 5];
+	AB[ 6] = A[ 6] + B[ 6];
+	AB[ 7] = A[ 7] + B[ 7];
+	AB[ 8] = A[ 8] + B[ 8];
+	AB[ 9] = A[ 9] + B[ 9];
+	AB[10] = A[10] + B[10];
+	AB[11] = A[11] + B[11];
+	AB[12] = A[12] + B[12];
+	AB[13] = A[13] + B[13];
+	AB[14] = A[14] + B[14];
+	AB[15] = A[15] + B[15];
+}
+
 #if 0
 static void mat4_log(GLfloat mat[])
 {
@@ -309,13 +329,13 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, 
 	{
 		mat4_multiply4(obj->move, rot->mq, obj->move);
 	}
-	if (tr && tr->L != 0)
+	if (tr && tr->coord.L != 0)
 	{
-		if (tr->X + tr->Y + tr->Z != 1)
-			tr->L /= normalizef(tr->X, tr->Y, tr->Z);
-		obj->move[12] += tr->X * tr->L;
-		obj->move[13] += tr->Y * tr->L;
-		obj->move[14] += tr->Z * tr->L;
+		if (tr->coord.X + tr->coord.Y + tr->coord.Z != 1)
+			tr->coord.L /= normalizef(tr->coord.X, tr->coord.Y, tr->coord.Z);
+		obj->move[12] += tr->coord.X * tr->coord.L;
+		obj->move[13] += tr->coord.Y * tr->coord.L;
+		obj->move[14] += tr->coord.Z * tr->coord.L;
 	}
 }
 
@@ -332,22 +352,32 @@ GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t
 	kin->rest--;
 	if (kin->rest == 0)
 	{
-		if (kin->repeats > 0)
+		/**
+		 * the kinetic is complete, take the next one
+		 */
+		if (kin->repeats < 0)
+		{
+			/**
+			 * a negativ repeats will place the kinetic to the end
+			 * of the list. This generates a infinity loop
+			 */
+			GLMotor_Kinematic_t *last = obj->kinematic;
+			while (last->next != NULL) last = last->next;
+			if (last != obj->kinematic)
+			{
+				last->next = kin;
+				obj->kinematic = obj->kinematic->next;
+			}
+			kin->next = NULL;
+			kin->rest = -kin->repeats;
+			kin = obj->kinematic;
+		}
+		else
 		{
 			obj->kinematic = obj->kinematic->next;
 			free(kin);
 			return -1;
 		}
-		GLMotor_Kinematic_t *last = obj->kinematic;
-		while (last->next != NULL) last = last->next;
-		if (last != obj->kinematic)
-		{
-			last->next = kin;
-			obj->kinematic = obj->kinematic->next;
-		}
-		kin->next = NULL;
-		kin->rest = -kin->repeats;
-		kin = obj->kinematic;
 	}
 	if (kin->rest > 0)
 	{
@@ -368,19 +398,36 @@ GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t
  */
 GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, GLMotor_Rotate_t *rot, int repeats)
 {
-	GLMotor_Kinematic_t *kin = calloc(1, sizeof(*kin));
+	GLMotor_Rotate_t tmp = {0};
+	/**
+	 * two different cases:
+	 *  - repeats is 0 : it's a punctual event to append to the last kinetic
+	 *  - otherwise : it's a kinetic to run between two rendering
+	 */
+	GLMotor_Kinematic_t *kin = obj->kinematic;
+	if (repeats || kin == NULL)
+		kin = calloc(1, sizeof(*kin));
 	if (tr)
-		memcpy(&kin->tr, tr, sizeof(kin->tr));
+	{
+		for (int i = 0; i < sizeof(*tr)/sizeof(*tr->mat); i++)
+			kin->tr.mat[i] += tr->mat[i];
+	}
 	if (rot && rot->mq[15] == 0)
 	{
-		ra2mq(&rot->ra, kin->rot.mq);
+		ra2mq(&rot->ra, tmp.mq);
+		rot = &tmp;
 	}
-	else if (rot)
+	if (rot)
 	{
-		memcpy(kin->rot.mq, rot->mq, sizeof(kin->rot.mq));
+		mat4_add4(kin->rot.mq, rot->mq, kin->rot.mq);
 	}
-	kin->next = obj->kinematic;
-	kin->rest = kin->repeats = repeats;
+	if (kin != obj->kinematic)
+	{
+		kin->next = obj->kinematic;
+	}
+	else
+		repeats = 1;
+	kin->rest = kin->repeats += repeats;
 	kin->rest *= (kin->repeats < 0)? -1: 1;
 	obj->kinematic = kin;
 }

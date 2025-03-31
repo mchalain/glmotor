@@ -222,6 +222,13 @@ int main(int argc, char** argv)
 #endif
 
 #if 0
+	GLMotor_Translate_t tr = {0};
+	tr.coord.L = 0.001;
+	tr.coord.X = 1.0;
+	object_appendkinematic(obj, &tr, NULL, -50);
+	tr.coord.X *= -1;
+	object_appendkinematic(obj, &tr, NULL, -50);
+#else
 	GLMotor_Rotate_t rotate = { 0 };
 	rotate.ra.X = 0; rotate.ra.Y = 0; rotate.ra.Z = 1; rotate.ra.A = M_PI_4/100;
 	object_appendkinematic(obj, NULL, NULL, -50);
