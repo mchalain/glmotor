@@ -32,16 +32,19 @@ static GLint readFile(const char* fileName, char** fileContent)
 	pFile = fopen(fileName, "r");
 	if ( pFile == NULL )
 	{
-		err("segl: shader file '%s' opening error %m",fileName);
+		err("glmotor: shader file '%s' opening error %m",fileName);
 		return 0;
 	}
 
 	fileSize = getFileSize(pFile);
 
+	if (fileContent == NULL)
+		return fileSize;
+
 	*fileContent = (char*)malloc(fileSize + 1);
 	if ( *fileContent == NULL )
 	{
-		err("segl: shader file loading memory allocation error %m");
+		err("glmotor: shader file loading memory allocation error %m");
 		return 0;
 	}
 
@@ -69,7 +72,7 @@ static void display_log(GLuint instance)
 	log = (GLchar*)malloc(logSize);
 	if ( log == NULL )
 	{
-		err("segl: Log memory allocation error %m");
+		err("glmotor: Log memory allocation error %m");
 		return;
 	}
 	if (glIsProgram(instance))
@@ -171,6 +174,7 @@ GLMOTOR_EXPORT GLuint program_load(const char *vertex, const char *fragments[], 
 	GLuint fragmentSize[MAX_FRAGS] = {0};
 	for (int i = 0; i < nbfragments; i++)
 	{
+		warn("glmotor: load %s", fragments[i]);
 		fragmentSize[i] = readFile(fragments[i], &fragmentSource[i]);
 		if (fragmentSize[i] == 0)
 		{
