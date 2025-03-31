@@ -29,6 +29,7 @@ struct GLMotor_TextureCameraBuffer_s
 	void *mem;
 	int dmafd;
 	size_t size;
+	size_t offset;
 };
 
 typedef struct GLMotor_TextureCamera_s GLMotor_TextureCamera_t;
@@ -37,6 +38,7 @@ struct GLMotor_TextureCamera_s
 	int fd;
 	int nbuffers;
 	int bufid;
+	enum v4l2_memory memory;
 	GLMotor_TextureCameraBuffer_t *textures;
 	GLenum family;
 };
@@ -194,14 +196,31 @@ static int camerainit(const char *device, GLuint *width, GLuint *height, GLuint 
 {
 	int fd = open(device, O_RDWR);
 	if (fd < 0)
+	{
+		err("glmotor: device %s error %m", device);
 		return -1;
+	}
 	struct v4l2_capability cap;
 	if (ioctl(fd, VIDIOC_QUERYCAP, &cap))
+	{
+		err("glmotor: device not a video device");
 		goto camerainit_error;
+	}
+	if (cap.capabilities & V4L2_CAP_VIDEO_CAPTURE_MPLANE)
+	{
+		err("glmotor: camera multiplane not supported");
+		goto camerainit_error;
+	}
 	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
+	{
+		err("glmotor: device not a camera");
 		goto camerainit_error;
+	}
 	if (!(cap.capabilities & V4L2_CAP_STREAMING))
+	{
+		err("glmotor: device not a camera stream");
 		goto camerainit_error;
+	}
 	struct v4l2_fmtdesc ffmt = {0};
 	ffmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	int support_fmt = 0;
@@ -319,7 +338,7 @@ camerainit_error:
 	return -1;
 }
 
-static int camerabuffer(int fd, int id, void **mem, size_t *size)
+static int camerabuffer(int fd, int id, void **mem, size_t *size, size_t *offset)
 {
 	struct v4l2_exportbuffer expbuf = {0};
 	expbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -338,13 +357,10 @@ static int camerabuffer(int fd, int id, void **mem, size_t *size)
 		err("glmotor: Query buffer for mmap error %m");
 		return -1;
 	}
+	*offset = buf.m.offset;
 	*mem = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
 	*size = buf.length;
 
-	if (ioctl(fd, VIDIOC_QBUF, &buf))
-	{
-		return -1;
-	}
 	return expbuf.fd;
 }
 
@@ -436,18 +452,68 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	}
 #endif
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+	enum v4l2_memory memory_type = V4L2_MEMORY_MMAP;
 	GLMotor_TextureCameraBuffer_t *textures = calloc(nbuffers, sizeof(GLMotor_TextureCameraBuffer_t));
 	for (int i = 0; i < nbuffers; i++)
 	{
 		glGenTextures(nbuffers, &textures[i].ID);
-		void *mem = NULL;
-		textures[i].dmafd = camerabuffer(fd, i, &textures[i].mem, &textures[i].size);
+		textures[i].dmafd = camerabuffer(fd, i, &textures[i].mem, &textures[i].size, &textures[i].offset);
 		if (textures[i].dmafd < 0)
 		{
 			nbuffers = i;
 			break;
 		}
+#ifdef HAVE_EGL
+		munmap(textures[i].mem, textures[i].size);
+		textures[i].mem = NULL;
+#endif
+	}
+#if 0
+	/**
+	 * with EGL we should use V4L2_MEMORY_DMABUF,
+	 * now the requesting of dmabuf runs but not the queueing.
+	 * If we disable the requesting of dmabuf,
+	 * and use V4L2_MEMORY_MMAP with mem to NULL and m.fd set
+	 * the stream runs. We have not explaination.
+	 */
 
+	/// we need mmap first to export dmabuf
+	/// we free mmap buffer to request dmabuf
+	struct v4l2_requestbuffers reqbuf;
+	reqbuf.count = 0;
+	reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	reqbuf.memory = memory_type;
+	if (ioctl(fd, VIDIOC_REQBUFS, &reqbuf))
+	{
+		err("glmotor: request v4l2 buffers error %m");
+		return NULL;
+	}
+
+	memory_type = V4L2_MEMORY_DMABUF;
+	reqbuf.count = nbuffers;
+	reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	reqbuf.memory = memory_type;
+	if (ioctl(fd, VIDIOC_REQBUFS, &reqbuf))
+	{
+		err("glmotor: request v4l2 buffers error %m");
+		return NULL;
+	}
+	dbg("glmotor: request %d/%d dmabuf", reqbuf.count, nbuffers);
+#endif
+	for (int i = 0; i < nbuffers; i++)
+	{
+		struct v4l2_buffer buf = {0};
+		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		buf.index = i;
+		buf.memory = memory_type;
+		buf.m.fd = textures[i].dmafd;
+		buf.m.offset = textures[i].offset;
+		buf.length = textures[i].size;
+		if (ioctl(fd, VIDIOC_QBUF, &buf))
+		{
+			err("glmotor: buffer queueing error %m");
+			return NULL;
+		}
 #ifdef HAVE_EGL
 		attrib_list[7] = textures[i].dmafd;
 		attrib_list[13] = textures[i].dmafd;
@@ -499,6 +565,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	camera->nbuffers = nbuffers;
 	camera->textures = textures;
 	camera->family = texturefamily;
+	camera->memory = memory_type;
 
 	GLMotor_Texture_t *tex;
 	tex = calloc(1, sizeof(*tex));
@@ -530,7 +597,7 @@ static GLint texturecamera_draw(GLMotor_Texture_t *tex)
 	GLMotor_TextureCamera_t *camera = tex->private;
 	struct v4l2_buffer buf = {0};
 	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	buf.memory = V4L2_MEMORY_MMAP;
+	buf.memory = camera->memory;
 
 	// unbind texture may lag the video
 	// glBindTexture(camera->family, 0);
