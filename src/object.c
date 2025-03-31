@@ -2,6 +2,7 @@
 #include <math.h>
 #include <limits.h>
 #include <string.h>
+#include <pthread.h>
 
 #ifdef HAVE_GLESV2
 # include <GLES2/gl2.h>
@@ -60,6 +61,7 @@ struct GLMotor_Object_s
 	GLuint programID;
 	GLMotor_Kinematic_t *kinematic;
 	GLMotor_Texture_t *texture;
+	pthread_mutex_t kinmutex;
 };
 
 static GLuint _object_setup(GLMotor_Object_t *obj, GLuint programID)
@@ -150,6 +152,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 	obj->ID = objID;
 	obj->maxpoints = maxpoints;
 	obj->maxfaces = maxfaces;
+	pthread_mutex_init(&obj->kinmutex, NULL);
 
 	obj->move[ 0] =
 	 obj->move[ 5] =
@@ -349,7 +352,6 @@ GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t
 	GLMotor_Kinematic_t *kin = obj->kinematic;
 	if (kin == NULL)
 		return -1;
-	kin->rest--;
 	if (kin->rest == 0)
 	{
 		/**
@@ -357,6 +359,7 @@ GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t
 		 */
 		if (kin->repeats < 0)
 		{
+			pthread_mutex_lock(&obj->kinmutex);
 			/**
 			 * a negativ repeats will place the kinetic to the end
 			 * of the list. This generates a infinity loop
@@ -371,16 +374,20 @@ GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t
 			kin->next = NULL;
 			kin->rest = -kin->repeats;
 			kin = obj->kinematic;
+			pthread_mutex_unlock(&obj->kinmutex);
 		}
 		else
 		{
+			pthread_mutex_lock(&obj->kinmutex);
 			obj->kinematic = obj->kinematic->next;
+			pthread_mutex_unlock(&obj->kinmutex);
 			free(kin);
 			return -1;
 		}
 	}
 	if (kin->rest > 0)
 	{
+		kin->rest--;
 		*tr = &kin->tr;
 		*rot = &kin->rot;
 		return 1;
@@ -399,6 +406,7 @@ GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t
 GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, GLMotor_Rotate_t *rot, int repeats)
 {
 	GLMotor_Rotate_t tmp = {0};
+	pthread_mutex_lock(&obj->kinmutex);
 	/**
 	 * two different cases:
 	 *  - repeats is 0 : it's a punctual event to append to the last kinetic
@@ -430,6 +438,7 @@ GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Transl
 	kin->rest = kin->repeats += repeats;
 	kin->rest *= (kin->repeats < 0)? -1: 1;
 	obj->kinematic = kin;
+	pthread_mutex_unlock(&obj->kinmutex);
 }
 
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex)
