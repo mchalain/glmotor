@@ -381,12 +381,83 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 		{
 			next = line + 6;
 			while(isspace(*next)) next++;
-			int ret = 0;
 			GLMotor_Texture_t *tex = texture_load(motor, next);
 			if (tex)
 				object_addtexture(obj, tex);
 			else
 				err("texture \"%s\" not supported", line + 7);
+		}
+		else if (! strncmp("ki", line, 2))
+		{
+			next = line + 2;
+			while(isspace(*next)) next++;
+			GLuint format = 1;
+			GLMotor_Translate_t tr = {0};
+			GLMotor_Translate_t *ptr = &tr;
+			GLMotor_Rotate_t rotate = { 0 };
+			GLMotor_Rotate_t *protate = &rotate;
+			int repeats = 1;
+			int ret = 1;
+			while (ret > 0 && next)
+			{
+				switch (format)
+				{
+				case 1:
+					ret = sscanf(next, "%f", &tr.coord.L);
+					if (ret == 0)
+						tr.coord.L = 1.0;
+					format = 2;
+					ret = 1;
+				break;
+				case 2:
+					next = strchr(next, '(');
+					if (next == NULL) break;
+					next++;
+					while(isspace(*next)) next++;
+					ret = sscanf(next, "%f %f %f",
+						&tr.coord.X, &tr.coord.Y, &tr.coord.Z);
+					if (ret == 0)
+						ptr = NULL;
+					format = 3;
+					ret = 1;
+				break;
+				case 3:
+					next = strchr(next, ')');
+					if (next == NULL) break;
+					next++;
+					while(isspace(*next)) next++;
+					ret = sscanf(next, "%f",
+						&rotate.ra.A);
+					if (ret == 0)
+						protate = NULL;
+					format = 4;
+					ret = 1;
+				break;
+				case 4:
+					next = strchr(next, '(');
+					if (next == NULL) break;
+					next++;
+					while(isspace(*next)) next++;
+					ret = sscanf(next, "%f %f %f",
+						&rotate.ra.X, &rotate.ra.Y, &rotate.ra.Z);
+					if (ret == 0)
+						protate = NULL;
+					format = 5;
+					ret = 1;
+				break;
+				case 5:
+					next = strchr(next, ')');
+					if (next == NULL) break;
+					next++;
+					while(isspace(*next)) next++;
+					ret = sscanf(next, "%d", &repeats);
+					if (ret == 0)
+						ret = -1;
+				break;
+				}
+			}
+			if (ptr || protate)
+				object_appendkinematic(obj, ptr, protate, repeats);
 		}
 	} while (ret != 0);
 
