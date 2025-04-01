@@ -27,6 +27,7 @@ glsurface_LIBRARY-$(EGL)+=libjpeg
 bin-y+=glmotor
 glmotor_SOURCES+=main.c
 glmotor_SOURCES+=glmotor.c
+glmotor_SOURCES+=mat.c
 glmotor_SOURCES+=scene.c
 glmotor_SOURCES+=object.c
 glmotor_SOURCES+=texture.c
