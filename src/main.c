@@ -23,6 +23,7 @@ static config_t configfile = {0};
 
 static GLfloat g_angle = 0.0;
 static GLfloat g_camera[] = {0.0, 0.0, 100.0};
+#define MODE_INTERACTIV 0x01
 
 #ifdef HAVE_LIBCONFIG
 static void program_parsesetting(config_setting_t *parser, GLMotor_config_t *config)
@@ -151,11 +152,12 @@ int main(int argc, char** argv)
 		.width = 640,
 		.height = 480,
 	};
+	int mode = 0;
 	int opt;
 	opterr = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-W:H:o:v:f:C:t:");
+		opt = getopt(argc, argv, "-W:H:o:v:f:C:t:i");
 		switch (opt)
 		{
 			case 'W':
@@ -179,6 +181,9 @@ int main(int argc, char** argv)
 			break;
 			case 't':
 				config.texture = optarg;
+			break;
+			case 'i':
+				mode = MODE_INTERACTIV;
 			break;
 		}
 	} while (opt != -1);
@@ -227,24 +232,8 @@ int main(int argc, char** argv)
 
 #ifdef HAVE_LIBINPUT
 	GLMotor_Input_t *input = NULL;
-	input = input_create(scene);
-#else
-#if 0
-	GLMotor_Translate_t tr = {0};
-	tr.coord.L = 0.001;
-	tr.coord.X = 1.0;
-	object_appendkinematic(obj, &tr, NULL, -50);
-	tr.coord.X *= -1;
-	object_appendkinematic(obj, &tr, NULL, -50);
-#else
-	GLMotor_Rotate_t rotate = { 0 };
-	rotate.ra.X = 0; rotate.ra.Y = 0; rotate.ra.Z = 1; rotate.ra.A = M_PI_4/100;
-	object_appendkinematic(obj, NULL, NULL, -50);
-	object_appendkinematic(obj, NULL, &rotate, -100);
-	object_appendkinematic(obj, NULL, NULL, -50);
-	rotate.ra.A *= -1;
-	object_appendkinematic(obj, NULL, &rotate, -100);
-#endif
+	if (mode & MODE_INTERACTIV)
+		input = input_create(scene);
 #endif
 	glmotor_run(motor, render, scene);
 	scene_destroy(scene);
