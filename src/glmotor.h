@@ -119,10 +119,10 @@ union GLMotor_Translate_s
 {
 	GLfloat mat[4];
 	struct {
-		GLfloat L;
 		GLfloat X;
 		GLfloat Y;
 		GLfloat Z;
+		GLfloat L;
 	} coord;
 };
 
@@ -159,7 +159,7 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, 
 GLMOTOR_EXPORT const GLfloat* object_positionmatrix(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t **tr, GLMotor_Rotate_t **rot);
 GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, GLMotor_Rotate_t *rot, int repeats);
-GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj);
+GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj, GLfloat *view);
 GLMOTOR_EXPORT const char * object_name(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj);
 

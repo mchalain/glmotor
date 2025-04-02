@@ -1,3 +1,5 @@
+SCENE_MOVECAMERA=y
+
 GLUT=n
 GLFW=n
 EGL=y

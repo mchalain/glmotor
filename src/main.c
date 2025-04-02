@@ -21,8 +21,6 @@
 static config_t configfile = {0};
 #endif
 
-static GLfloat g_angle = 0.0;
-static GLfloat g_camera[] = {0.0, 0.0, 100.0};
 #define MODE_INTERACTIV 0x01
 
 #ifdef HAVE_LIBCONFIG
@@ -84,13 +82,6 @@ static int main_parseconfig(const char *file, GLMotor_config_t *config)
 static void render(void *data)
 {
 	GLMotor_Scene_t *scene = (GLMotor_Scene_t *)data;
-#if 0
-
-	g_camera[0] += 5.0 * sin(g_angle);
-	g_camera[2] += 5.0 * cos(g_angle);
-	g_angle += M_2_PI / 100;
-	scene_movecamera(scene, g_camera, NULL);
-#endif
 	GLMotor_Object_t *obj = scene_nextobject(scene, NULL);
 	for (; obj != NULL; obj = scene_nextobject(scene, obj))
 	{
@@ -225,10 +216,6 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	scene_appendobject(scene, obj);
-#if 0
-	GLfloat target[] = {0.0, 0.0, 0.0};
-	scene_movecamera(scene, g_camera, target);
-#endif
 
 #ifdef HAVE_LIBINPUT
 	GLMotor_Input_t *input = NULL;

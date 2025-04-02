@@ -378,7 +378,7 @@ GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals
 	return 0;
 }
 
-GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
+GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj, GLfloat *view)
 {
 	GLint ret = 0;
 	GLMotor_t *motor = obj->motor;
@@ -388,8 +388,16 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj)
 	if (obj->texture)
 		ret = texture_draw(obj->texture);
 
+	GLfloat *vMove = &obj->move[0];
+#if SCENE_MOVECAMERA == y
+	GLfloat tmp[16];
+	memcpy(tmp, &obj->move[0], sizeof(tmp));
+	if (view)
+		mat4_multiply4(tmp, view, tmp);
+	vMove = tmp;
+#endif
 	GLuint moveID = glGetUniformLocation(obj->programID, "vMove");
-	glUniformMatrix4fv(moveID, 1, GL_FALSE, &obj->move[0]);
+	glUniformMatrix4fv(moveID, 1, GL_FALSE, vMove);
 
 	if (obj->nfaces && obj->nfaces < UINT_MAX)
 		glDrawElements(GL_TRIANGLE_STRIP, obj->nfaces * 3, GL_UNSIGNED_INT, 0);

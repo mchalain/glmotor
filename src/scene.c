@@ -17,6 +17,7 @@
 #endif
 
 #include "glmotor.h"
+#include "mat.h"
 #include "log.h"
 
 /***********************************************************************
@@ -27,6 +28,10 @@ struct GLMotor_Scene_s
 	GLMotor_t *motor;
 	GLMotor_list_t *objects;
 	GLuint buffermask;
+	GLfloat eye[3];
+	GLfloat center[3];
+	GLfloat up[3];
+	GLfloat view[16];
 };
 static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height);
 
@@ -76,25 +81,49 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 	scene->motor = motor;
 	scene->buffermask = buffermask;
 	scene_setresolution(scene, motor->width, motor->height);
+	scene->eye[0] = 0.0;
+	scene->eye[1] = 0.0;
+	scene->eye[2] = 1.0;
+	scene->center[0] = 0.0;
+	scene->center[1] = 0.0;
+	scene->center[2] = 0.0;
+	scene->up[0] = 0.0;
+	scene->up[1] = 1.0;
+	scene->up[2] = 0.0;
+	mat4_diag(scene->view);
 	return scene;
 }
 
+#if SCENE_MOVECAMERA == y
 GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target)
 {
-	const GLfloat defaultTarget[] = {0.0, 0.0, 0.0}; //target the center of the world
-	const GLfloat *applyTarget = defaultTarget;
+	if (camera != NULL)
+	{
+		scene->eye[0] = camera[0];
+		scene->eye[1] = camera[1];
+		scene->eye[2] = camera[2];
+	}
 	if (target != NULL)
-		applyTarget = target;
+	{
+		scene->center[0] = target[0];
+		scene->center[1] = target[1];
+		scene->center[2] = target[2];
+	}
 #ifndef HAVE_GLESV2
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 #endif
 #ifdef HAVE_GLU
-	gluLookAt(camera[0], camera[1], camera[2],
-			applyTarget[0], applyTarget[1], applyTarget[2],
-			0, 1, 0);
+	gluLookAt(scene->eye[0], scene->eye[1], scene->eye[2],
+			scene->center[0], scene->center[1], scene->center[2],
+			scene->up[0], scene->up[1], scene->up[2]);
 #endif
+	mat4_lookat(scene->eye, scene->center, scene->up, scene->view);
 }
+#else
+GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target)
+{}
+#endif
 
 static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height)
 {
@@ -162,7 +191,7 @@ GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 
 	for (GLMotor_list_t *it = scene->objects; it != NULL; it = it->next)
 	{
-		ret = object_draw((GLMotor_Object_t *)it->entity);
+		ret = object_draw((GLMotor_Object_t *)it->entity, scene->view);
 		if (ret)
 			break;
 	}
