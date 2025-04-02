@@ -7,22 +7,17 @@ slib-y+=glsurface
 glsurface_SOURCES-$(GLUT)+=surfaceglut.c
 glsurface_LIBS-$(GLUT)+=glut
 glsurface_SOURCES-$(HAVE_GLFW3)+=surfaceglfw.c
-glsurface_LIBRARY-$(GLFW)+=glfw3
 glsurface_SOURCES-$(HAVE_EGL)+=surfaceegl.c
-glsurface_LIBRARY-$(EGL)+=egl
 glsurface_SOURCES-$(EGL:y=$(HAVE_LIBJPEG))+=eglnativejpeg.c
-glsurface_SOURCES-$(HAVE_WAYLAND_EGL)+=eglnativewl.c
-glsurface_LIBRARY-$(HAVE_WAYLAND_EGL)+=xkbcommon
+glsurface_SOURCES-$(EGL:y=$(HAVE_WAYLAND_EGL))+=eglnativewl.c
 glsurface_SOURCES-$(EGL:y=$(HAVE_X11))+=eglnativex.c
 glsurface_SOURCES-$(EGL)+=eglnativepbuffer.c
 glsurface_SOURCES-$(EGL:y=$(HAVE_GBM:y=$(HAVE_LIBDRM)))+=eglnativedrm.c
-ifeq ($(WAYLAND),y)
-glsurface_LIBRARY-$(EGL)+=wayland-egl
-endif
-glsurface_LIBRARY-$(EGL)+=x11
-glsurface_LIBRARY-$(EGL)+=libdrm
-glsurface_LIBRARY-$(EGL)+=gbm
-glsurface_LIBRARY-$(EGL)+=libjpeg
+glsurface_LIBRARY+=wayland-egl
+glsurface_LIBRARY+=libdrm
+glsurface_LIBRARY+=gbm
+glsurface_LIBRARY+=libjpeg
+glsurface_LIBRARY+=x11
 
 bin-y+=glmotor
 glmotor_SOURCES+=main.c
@@ -35,24 +30,23 @@ glmotor_SOURCES+=dynloader.c
 glmotor_SOURCES-$(HAVE_LIBINPUT)+=input.c
 glmotor_GENERATED-$(HAVE_WAYLAND_EGL)+=xdg-shell-protocol.c
 glmotor_LIBS+=glsurface
-glmotor_LIBS-$(EGL)+=dl
+glmotor_LIBS+=m
+glmotor_LIBS-$(HAVE_EGL)+=dl
 glmotor_LIBS-$(GLUT)+=glut
-glmotor_LIBRARY-y+=libconfig
-glmotor_LIBRARY-$(HAVE_LIBINPUT)+=libinput
-glmotor_LIBRARY-$(HAVE_LIBINPUT)+=libudev
+glmotor_LIBRARY+=libconfig
+glmotor_LIBRARY+=libinput
+glmotor_LIBRARY+=libudev
 glmotor_LIBRARY-$(GLFW)+=glfw3
 glmotor_LIBRARY-$(EGL)+=egl
-glmotor_LIBRARY-$(EGL)+=wayland-egl
-glmotor_LIBRARY-$(EGL)+=xkbcommon
-glmotor_LIBRARY-$(EGL)+=x11
-glmotor_LIBRARY-$(EGL)+=libdrm
-glmotor_LIBRARY-$(EGL)+=gbm
-glmotor_LIBRARY-$(EGL)+=libjpeg
 glmotor_LIBRARY-$(GLEW)+=glew
 glmotor_LIBRARY-$(GLESV2)+=glesv2
 #glmotor_LIBRARY-$(GLESV2:n=y)+=gl
-glmotor_LIBS+=m
-glmotor_LIBRARY+=glu
+glmotor_LIBRARY+=xkbcommon
+glmotor_LIBRARY+=wayland-egl
+glmotor_LIBRARY+=libdrm
+glmotor_LIBRARY+=gbm
+glmotor_LIBRARY+=libjpeg
+glmotor_LIBRARY+=x11
 
 PKG_CONFIG?=pkg-config
 WAYLAND_FLAGS = $(shell $(PKG_CONFIG) wayland-client --cflags --libs)

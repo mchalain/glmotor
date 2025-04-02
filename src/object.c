@@ -10,9 +10,6 @@
 # include <GL/glew.h>
 # include <GL/gl.h>
 #endif
-#ifdef HAVE_GLU
-#include <GL/glu.h>
-#endif
 
 #include "glmotor.h"
 #include "mat.h"

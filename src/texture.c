@@ -13,9 +13,6 @@
 #else
 # include <GL/glew.h>
 #endif
-#ifdef HAVE_GLU
-#include <GL/glu.h>
-#endif
 
 #include "glmotor.h"
 #include "log.h"

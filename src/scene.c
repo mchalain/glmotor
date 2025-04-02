@@ -12,9 +12,6 @@
 # include <GL/gl.h>
 # include <GL/glext.h>
 #endif
-#ifdef HAVE_GLU
-#include <GL/glu.h>
-#endif
 
 #include "glmotor.h"
 #include "mat.h"
@@ -63,9 +60,6 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 #ifndef HAVE_GLESV2
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-#ifdef HAVE_GLU
-	gluPerspective(atan(tan(50.0 * 3.14159 / 360.0) / 1.0) * 360.0 / 3.141593, (GLfloat)motor->width / (GLfloat)motor->height, 0.1, 100.0);
-#endif
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 #endif
@@ -112,11 +106,6 @@ GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *came
 #ifndef HAVE_GLESV2
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-#endif
-#ifdef HAVE_GLU
-	gluLookAt(scene->eye[0], scene->eye[1], scene->eye[2],
-			scene->center[0], scene->center[1], scene->center[2],
-			scene->up[0], scene->up[1], scene->up[2]);
 #endif
 	mat4_lookat(scene->eye, scene->center, scene->up, scene->view);
 }
