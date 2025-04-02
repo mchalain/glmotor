@@ -154,10 +154,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 	obj->maxfaces = maxfaces;
 	pthread_mutex_init(&obj->kinmutex, NULL);
 
-	obj->move[ 0] =
-	 obj->move[ 5] =
-	 obj->move[10] =
-	 obj->move[15] = 1;
+	mat4_diag(obj->move);
 
 	return obj;
 }
@@ -324,7 +321,7 @@ GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Transl
 	}
 	if (rot)
 	{
-		mat4_add4(kin->rot.mq, rot->mq, kin->rot.mq, 1);
+		mat4_add4(kin->rot.mq, 1, rot->mq, kin->rot.mq);
 	}
 	if (kin != obj->kinematic)
 	{

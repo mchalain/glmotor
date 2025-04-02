@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 
@@ -8,6 +9,13 @@
 #endif
 
 #include "glmotor.h"
+#include "log.h"
+
+void mat4_diag(GLfloat A[])
+{
+	memset(A, 0, 16 * sizeof(*A));
+	A[0] = A[5] = A[10] = A[15] = 1;
+}
 
 void mat4_multiply4(GLfloat A[], GLfloat B[], GLfloat AB[])
 {
@@ -36,31 +44,39 @@ void mat4_multiply4(GLfloat A[], GLfloat B[], GLfloat AB[])
 	memcpy(AB, TMP, sizeof(TMP));
 }
 
-void mat4_add4(GLfloat A[], GLfloat B[], GLfloat AB[], int sign)
+static void _add(GLfloat A[], GLfloat B[], GLfloat AB[], unsigned int size, int sign)
 {
 	if (sign < 0)
 		sign = -1;
 	else
 		sign = 1;
-	AB[ 0] = A[ 0] + sign * B[ 0];
-	AB[ 1] = A[ 1] + sign * B[ 1];
-	AB[ 2] = A[ 2] + sign * B[ 2];
-	AB[ 3] = A[ 3] + sign * B[ 3];
-	AB[ 4] = A[ 4] + sign * B[ 4];
-	AB[ 5] = A[ 5] + sign * B[ 5];
-	AB[ 6] = A[ 6] + sign * B[ 6];
-	AB[ 7] = A[ 7] + sign * B[ 7];
-	AB[ 8] = A[ 8] + sign * B[ 8];
-	AB[ 9] = A[ 9] + sign * B[ 9];
-	AB[10] = A[10] + sign * B[10];
-	AB[11] = A[11] + sign * B[11];
-	AB[12] = A[12] + sign * B[12];
-	AB[13] = A[13] + sign * B[13];
-	AB[14] = A[14] + sign * B[14];
-	AB[15] = A[15] + sign * B[15];
+	for (int i = 0; i < size; i++)
+	{
+		AB[i] = A[i] + sign * B[i];
+	}
 }
 
-#if 0
+void mat_add(GLfloat A[], int sign, GLfloat B[], GLfloat AB[], unsigned int size)
+{
+	_add(A, B, AB, size * size, sign);
+}
+
+void mat4_add4(GLfloat A[], int sign, GLfloat B[], GLfloat AB[])
+{
+	_add(A, B, AB, 16, sign);
+}
+
+void vec_add(GLfloat A[], int sign, GLfloat B[], GLfloat AB[], unsigned int size)
+{
+	_add(A, B, AB, size, sign);
+}
+
+void vec3_add(GLfloat A[], int sign, GLfloat B[], GLfloat AB[])
+{
+	_add(A, B, AB, 3, sign);
+}
+
+#ifdef DEBUG
 void mat4_log(GLfloat mat[])
 {
 	for (int i = 0; i < 4; i++)
@@ -85,6 +101,52 @@ static float squaref(float value)
 float normalizef(float u, float v, float w)
 {
 	return sqrtf(squaref(u) + squaref(v) + squaref(w));
+}
+
+void vec3_normalize(GLfloat I[], GLfloat O[])
+{
+	GLfloat N = normalizef(I[0], I[1], I[2]);
+	if (N == 0)
+		N = 1;
+	O[0] = I[0] / N;
+	O[1] = I[1] / N;
+	O[2] = I[2] / N;
+}
+
+void vec3_multiply(GLfloat A[], GLfloat B[], GLfloat AB[])
+{
+	GLfloat TMP[3];
+	TMP[0] = (A[1] * B[2]) - (A[2] * B[1]);
+	TMP[1] = (A[2] * B[0]) - (A[0] * B[2]);
+	TMP[2] = (A[0] * B[1]) - (A[1] * B[0]);
+	memcpy(AB, TMP, sizeof(TMP));
+}
+
+GLfloat vec3_dot(GLfloat A[], GLfloat B[])
+{
+	GLfloat TMP = 0;
+	for (int i = 0; i < 3; i++)
+		TMP += A[i] * B[i];
+	return TMP;
+}
+
+void mat4_lookat(GLfloat eye[], GLfloat center[], GLfloat up[], GLfloat view[])
+{
+	GLfloat *forward = &view[8];
+	vec3_add(eye, -1, center, forward);
+	vec3_normalize(forward, forward);
+
+	GLfloat *right = &view[0];
+	vec3_multiply(up, forward, right);
+	vec3_normalize(right, right);
+
+	GLfloat *uptmp = &view[4];
+	vec3_multiply(forward, right, uptmp);
+	//vec3_normalize(uptmp, uptmp);
+	view[ 3] = -vec3_dot(eye, right);
+	view[ 7] = -vec3_dot(eye, uptmp);
+	view[11] = -vec3_dot(eye, forward);
+	view[15] = 1.0;
 }
 
 void ra2mq(GLMotor_RotAxis_t *ra, GLfloat mq[])
