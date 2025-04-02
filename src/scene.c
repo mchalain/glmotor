@@ -169,6 +169,16 @@ GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 	return ret;
 }
 
+GLMOTOR_EXPORT GLuint scene_width(GLMotor_Scene_t *scene)
+{
+	return scene->motor->width;
+}
+
+GLMOTOR_EXPORT GLuint scene_height(GLMotor_Scene_t *scene)
+{
+	return scene->motor->height;
+}
+
 GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene)
 {
 	for (GLMotor_list_t *it = scene->objects, *next = it->next; it != NULL; it = next, next = it->next)

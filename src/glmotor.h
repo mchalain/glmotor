@@ -170,6 +170,8 @@ GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const c
 GLMOTOR_EXPORT GLMotor_Object_t *scene_nextobject(GLMotor_Scene_t *scene, GLMotor_Object_t *prev);
 GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target);
 GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene);
+GLMOTOR_EXPORT GLuint scene_width(GLMotor_Scene_t *scene);
+GLMOTOR_EXPORT GLuint scene_height(GLMotor_Scene_t *scene);
 GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene);
 
 GLMOTOR_EXPORT GLMotor_Offscreen_t *glmotor_offscreen_create(GLMotor_config_t *config);
