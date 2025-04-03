@@ -359,14 +359,6 @@ static int camerabuffer(int fd, int id, void **mem, size_t *size, size_t *offset
 	return expbuf.fd;
 }
 
-#ifdef HAVE_EGL
-extern GLMOTOR_EXPORT EGLDisplay* glmotor_egldisplay(GLMotor_t *motor);
-
-PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;
-PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR = NULL;
-PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = NULL;
-#endif // HAVE_EGL
-
 GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const char *device, GLuint width, GLuint height, uint32_t fourcc)
 {
 	int nbuffers = MAX_CAMERA_BUFFERS;
@@ -386,54 +378,6 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 
 	if (fourcc == 0)
 		fourcc = FOURCC('A','B','2','4');
-
-#ifdef HAVE_EGL
-	if (! eglCreateImageKHR)
-		eglCreateImageKHR = (void *) eglGetProcAddress("eglCreateImageKHR");
-	if (! eglDestroyImageKHR)
-		eglDestroyImageKHR = (void *) eglGetProcAddress("eglDestroyImageKHR");
-	if (! glEGLImageTargetTexture2DOES)
-		glEGLImageTargetTexture2DOES = (void *) eglGetProcAddress("glEGLImageTargetTexture2DOES");
-
-	EGLint attrib_list[] = {
-		EGL_WIDTH, width,
-		EGL_HEIGHT, height,
-		EGL_LINUX_DRM_FOURCC_EXT, 0,
-		EGL_DMA_BUF_PLANE0_FD_EXT, 0,
-		EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-		EGL_DMA_BUF_PLANE0_PITCH_EXT, stride,
-		EGL_DMA_BUF_PLANE1_FD_EXT, 0,
-		EGL_DMA_BUF_PLANE1_OFFSET_EXT, stride * height,
-		EGL_DMA_BUF_PLANE1_PITCH_EXT, stride / 2,
-		EGL_DMA_BUF_PLANE2_FD_EXT, 0,
-		EGL_DMA_BUF_PLANE2_OFFSET_EXT, (stride * height) * 3/2,
-		EGL_DMA_BUF_PLANE2_PITCH_EXT, stride / 2,
-		EGL_NONE
-	};
-	attrib_list[5] = fourcc;
-	switch (fourcc)
-	{
-	case FOURCC('Y','U','1','2'):
-	break;
-	case FOURCC('N','V','1','2'):
-		// semi-planar format
-		attrib_list[18] = EGL_NONE; // only first and second planes
-	break;
-	case FOURCC('Y','U','Y','V'):
-		// interleaved format
-		attrib_list[12] = EGL_NONE; // only first plane
-#ifdef FIX_RASPBERRY_YUV
-		// Raspberry PI seems to have some trouble with the PITCH for the YUV formats
-		attrib_list[5] = FOURCC('X','B','2','4');
-		attrib_list[11] = stride  * sizeof(uint32_t);
-#endif
-	break;
-	default:
-		// interleaved format
-		attrib_list[12] = EGL_NONE; // only first plane
-	break;
-	}
-#endif // HAVE_EGL
 
 	GLenum texturefamily = GL_TEXTURE_2D;
 #ifdef HAVE_EGL
@@ -492,6 +436,31 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	}
 	dbg("glmotor: request %d/%d dmabuf", reqbuf.count, nbuffers);
 #endif
+#ifdef HAVE_EGL
+	int attrib_end = 24;
+	switch (fourcc)
+	{
+	case FOURCC('Y','U','1','2'):
+	break;
+	case FOURCC('N','V','1','2'):
+		// semi-planar format
+		attrib_end = 18; // only first and second planes
+	break;
+	case FOURCC('Y','U','Y','V'):
+		// interleaved format
+		attrib_end = 12; // only first plane
+#ifdef FIX_RASPBERRY_YUV
+		// Raspberry PI seems to have some trouble with the PITCH for the YUV formats
+		fourcc = FOURCC('X','B','2','4');
+		stride = stride  * sizeof(uint32_t);
+#endif
+	break;
+	default:
+		// interleaved format
+		attrib_end = 12; // only first plane
+	break;
+	}
+#endif
 	for (int i = 0; i < nbuffers; i++)
 	{
 		struct v4l2_buffer buf = {0};
@@ -507,22 +476,27 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 			return NULL;
 		}
 #ifdef HAVE_EGL
-		attrib_list[7] = textures[i].dmafd;
-		attrib_list[13] = textures[i].dmafd;
-		attrib_list[19] = textures[i].dmafd;
-		EGLImageKHR image = eglCreateImageKHR(glmotor_egldisplay(motor),
-			EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attrib_list);
-		if (image == EGL_NO_IMAGE_KHR)
+		EGLAttrib attrib_list[] = {
+			EGL_WIDTH, width,
+			EGL_HEIGHT, height,
+			EGL_LINUX_DRM_FOURCC_EXT, fourcc,
+			EGL_DMA_BUF_PLANE0_FD_EXT, textures[i].dmafd,
+			EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+			EGL_DMA_BUF_PLANE0_PITCH_EXT, stride,
+			EGL_DMA_BUF_PLANE1_FD_EXT, textures[i].dmafd,
+			EGL_DMA_BUF_PLANE1_OFFSET_EXT, stride * height,
+			EGL_DMA_BUF_PLANE1_PITCH_EXT, stride / 2,
+			EGL_DMA_BUF_PLANE2_FD_EXT, textures[i].dmafd,
+			EGL_DMA_BUF_PLANE2_OFFSET_EXT, (stride * height) * 3/2,
+			EGL_DMA_BUF_PLANE2_PITCH_EXT, stride / 2,
+			EGL_NONE
+		};
+		attrib_list[attrib_end] = EGL_NONE;
+		if (glmotor_eglTexImage2D(texturefamily, textures[i].ID, width, height, attrib_list))
 		{
 			nbuffers = i;
 			break;
 		}
-
-		glBindTexture(texturefamily, textures[i].ID);
-		glTexParameteri(texturefamily, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(texturefamily, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glEGLImageTargetTexture2DOES(texturefamily, image);
-		eglDestroyImageKHR(glmotor_egldisplay(motor), image);
 #else // HAVE_EGL
 		switch (fourcc)
 		{

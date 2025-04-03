@@ -196,4 +196,9 @@ GLMOTOR_EXPORT void scene_destroy(GLMotor_Scene_t *scene);
 GLMOTOR_EXPORT GLMotor_Offscreen_t *glmotor_offscreen_create(GLMotor_config_t *config);
 GLMOTOR_EXPORT void glmotor_offscreen_destroy(GLMotor_Offscreen_t *off);
 
+#ifdef HAVE_EGL
+#define EGLAttrib intptr_t
+GLMOTOR_EXPORT int glmotor_eglTexImage2D(GLuint texturefamily, GLuint ID, GLuint width, GLuint height, EGLAttrib *attribs);
+#endif
+
 #endif

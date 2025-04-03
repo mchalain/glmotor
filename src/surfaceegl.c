@@ -350,3 +350,20 @@ EGLContext glmotor_eglcontext(GLMotor_t *motor)
 	GLMotor_Surface_t *window = motor->surf;
 	return window->egl_context;
 }
+
+GLMOTOR_EXPORT int glmotor_eglTexImage2D(GLuint texturefamily, GLuint ID, GLuint width, GLuint height, EGLAttrib *attribs)
+{
+		EGLImageKHR image = eglCreateImage(egl_display,
+			EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attribs);
+		if (image == EGL_NO_IMAGE_KHR)
+		{
+			return -1;
+		}
+
+		glBindTexture(texturefamily, ID);
+		glTexParameteri(texturefamily, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(texturefamily, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glEGLImageTargetTexture2DOES(texturefamily, image);
+		eglDestroyImage(egl_display, image);
+	return 0;
+}
