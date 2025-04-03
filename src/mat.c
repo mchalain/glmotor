@@ -70,6 +70,55 @@ void vec3_add(GLfloat A[], int sign, GLfloat B[], GLfloat AB[])
 	_add(A, B, AB, 3, sign);
 }
 
+void mat4_frustum(GLfloat frame[], GLfloat near, GLfloat far, GLfloat O[])
+{
+	if ((frame[0] - frame[1] == 0.0f) ||
+		(frame[2] - frame[3] == 0.0f) ||
+		(near - far == 0.0f))
+	{
+		mat4_diag(O);
+		return;
+	}
+	memset(O, 0, 16 *sizeof(GLfloat));
+	GLfloat large = frame[1] - frame[0];
+	GLfloat tail = frame[3] - frame[2];
+	O[ 0] = 1.0f / large;
+	O[ 5] = 1.0f / tail;
+	O[ 8] = (frame[0] + frame[1]) / large;
+	O[ 9] = (frame[2] + frame[3]) / tail;
+	O[10] = -(far + near) / (far - near);
+	O[14] = -1.0f;
+	O[11] = -(2.f * far * near) / (far- near);
+}
+#if 1
+void mat4_perspective(GLfloat angle, GLfloat aspect, GLfloat near, GLfloat far, GLfloat O[])
+{
+	if (angle <= 0.0f || angle >= M_PI)
+		return;
+	GLfloat frame[4];
+	frame[3] = tanf(angle/2);
+	frame[2] = - frame[3];
+	frame[1] = frame[3] * aspect;
+	frame[0] = frame[2] * aspect;
+	mat4_frustum(frame, near, far, O);
+}
+#else
+void mat4_perspective(GLfloat angle, GLfloat aspect, GLfloat near, GLfloat far, GLfloat O[])
+{
+	if (angle <= 0.0f || angle >= M_PI)
+		return;
+	memset(O, 0, 16 *sizeof(GLfloat));
+	GLfloat tanFOV = tanf(angle / 2);
+	GLfloat range = far - near;
+	O[ 0] = 1.0f / (tanFOV * aspect);
+	O[ 5] = 1.0f / tanFOV;
+	O[10] = -(near + far) / (range);
+	O[11] = -2.0f * far *near / range;
+	O[14] = -1.0f;
+	O[15] = 0.0f;
+}
+#endif
+
 #ifdef DEBUG
 void mat4_log(GLfloat mat[])
 {

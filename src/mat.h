@@ -5,6 +5,8 @@ void mat4_diag(GLfloat A[]);
 void mat4_multiply4(GLfloat A[], GLfloat B[], GLfloat AB[]);
 void mat4_add4(GLfloat A[], int sign, GLfloat B[], GLfloat AB[]);
 void mat4_lookat(GLfloat eye[], GLfloat center[], GLfloat up[], GLfloat view[]);
+void mat4_frustum(GLfloat frame[], GLfloat near, GLfloat far, GLfloat O[]);
+void mat4_perspective(GLfloat angle, GLfloat aspect, GLfloat near, GLfloat far, GLfloat O[]);
 
 void mat_add(GLfloat A[], int sign, GLfloat B[], GLfloat AB[], unsigned int size);
 
