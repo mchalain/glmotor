@@ -37,6 +37,7 @@ struct GLMotor_Object_s
 	GLuint npoints;
 	GLuint nfaces;
 
+	int moved;
 	GLfloat move[16];
 	GLfloat defaultcolor[4];
 	GLuint position;
@@ -144,6 +145,7 @@ GLMOTOR_EXPORT GLMotor_Object_t *object_create(GLMotor_t *motor, const char *nam
 	pthread_mutex_init(&obj->kinmutex, NULL);
 
 	mat4_diag(obj->move);
+	obj->moved = 1;
 
 	return obj;
 }
@@ -211,15 +213,18 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, 
 		GLfloat mq[16];
 		ra2mq(ra, mq);
 		mat4_multiply4(obj->move, mq, obj->move);
+		obj->moved = 1;
 	}
 	else if (rot)
 	{
 		mat4_multiply4(obj->move, rot->mq, obj->move);
+		obj->moved = 1;
 	}
 	if (tr && tr->coord.L != 0)
 	{
 		for (int i = 0; i < 3; i++)
 			obj->move[12 + i] += tr->mat[i] * tr->coord.L;
+		obj->moved = 2;
 	}
 }
 
@@ -379,11 +384,12 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj, GLfloat *view)
 
 	GLfloat *vMove = &obj->move[0];
 #if SCENE_MOVECAMERA == y
-	GLfloat tmp[16];
-	memcpy(tmp, &obj->move[0], sizeof(tmp));
-	if (view)
-		mat4_multiply4(tmp, view, tmp);
-	vMove = tmp;
+	if (obj->moved)
+	{
+		if (view)
+			mat4_multiply4(&obj->move[0], view, &obj->move[0]);
+		obj->moved = 0;
+	}
 #endif
 	GLuint moveID = glGetUniformLocation(obj->programID, "vMove");
 	glUniformMatrix4fv(moveID, 1, GL_FALSE, vMove);

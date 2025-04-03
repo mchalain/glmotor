@@ -18,6 +18,7 @@ struct GLMotor_Scene_s
 	GLfloat center[3];
 	GLfloat up[3];
 	GLfloat view[16];
+	GLfloat *pview;
 };
 static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height);
 
@@ -97,6 +98,7 @@ GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *came
 	glLoadIdentity();
 #endif
 	mat4_lookat(scene->eye, scene->center, scene->up, scene->view);
+	scene->pview = scene->view;
 }
 #else
 GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target)
@@ -168,7 +170,8 @@ GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)
 
 	for (GLMotor_list_t *it = scene->objects; it != NULL; it = it->next)
 	{
-		ret = object_draw((GLMotor_Object_t *)it->entity, scene->view);
+		ret = object_draw((GLMotor_Object_t *)it->entity, scene->pview);
+		scene->pview = NULL;
 		if (ret)
 			break;
 	}
