@@ -380,13 +380,13 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		fourcc = FOURCC('A','B','2','4');
 
 	GLenum texturefamily = GL_TEXTURE_2D;
-#ifdef HAVE_EGL
-	if (strstr(glGetString(GL_EXTENSIONS), "OES_EGL_image_external"))
+	const char *extensions = glGetString(GL_EXTENSIONS);
+	if (extensions && strstr(extensions, "OES_EGL_image_external"))
 	{
 		glEnable(GL_TEXTURE_EXTERNAL_OES);
 		texturefamily = GL_TEXTURE_EXTERNAL_OES;
 	}
-#endif
+
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 	enum v4l2_memory memory_type = V4L2_MEMORY_MMAP;
 	GLMotor_TextureCameraBuffer_t *textures = calloc(nbuffers, sizeof(GLMotor_TextureCameraBuffer_t));
