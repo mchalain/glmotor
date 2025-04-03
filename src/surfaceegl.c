@@ -7,15 +7,19 @@
 
 #include <dlfcn.h>
 
-//#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#ifdef HAVE_GLESV2
+
 # include <GLES2/gl2.h>
 # include <GLES2/gl2ext.h>
-#else
-# include <GL/gl.h>
-#endif
+
+PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOES = NULL;
+PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES = NULL;
+PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT = NULL;
+PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = NULL;
+PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;
+PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR = NULL;
+PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = NULL;
 
 #define GLMOTOR_SURFACE_S struct GLMotor_Surface_s
 #include "glmotor.h"
@@ -37,24 +41,20 @@ struct GLMotor_Surface_s
 	EGLSurface egl_surface;
 };
 
-PFNGLBINDVERTEXARRAYOESPROC glBindVertexArray = NULL;
-PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays = NULL;
-PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT = NULL;
-PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = NULL;
-
 static EGLint egl_ContextType = EGL_OPENGL_ES2_BIT;
 static int init_egl(void)
 {
-	glGenVertexArrays = (void *) eglGetProcAddress("glGenVertexArraysOES");
-	if(glGenVertexArrays == NULL)
+	glGenVertexArraysOES = (void *) eglGetProcAddress("glGenVertexArraysOES");
+	if(glGenVertexArraysOES == NULL)
 	{
 		return -1;
 	}
-	glBindVertexArray = (void *) eglGetProcAddress("glBindVertexArrayOES");
-	if(glBindVertexArray == NULL)
+	glBindVertexArrayOES = (void *) eglGetProcAddress("glBindVertexArrayOES");
+	if(glBindVertexArrayOES == NULL)
 	{
 		return -2;
 	}
+
 	eglQueryDevicesEXT =
 		(PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");
 	if(!eglQueryDevicesEXT)
@@ -70,6 +70,28 @@ static int init_egl(void)
 		err("ERROR: extension eglGetPlatformDisplayEXT not available");
 		return -4;
 	}
+
+	eglCreateImageKHR = (void *) eglGetProcAddress("eglCreateImageKHR");
+	if(!eglCreateImageKHR)
+	{
+		err("ERROR: extension eglCreateImageKHR not available");
+		return -5;
+	}
+
+	eglDestroyImageKHR = (void *) eglGetProcAddress("eglDestroyImageKHR");
+	if(!eglDestroyImageKHR)
+	{
+		err("ERROR: extension eglDestroyImageKHR not available");
+		return -6;
+	}
+
+	glEGLImageTargetTexture2DOES = (void *) eglGetProcAddress("glEGLImageTargetTexture2DOES");
+	if(!glEGLImageTargetTexture2DOES)
+	{
+		err("ERROR: extension glEGLImageTargetTexture2DOES not available");
+		return -7;
+	}
+
 	return 0;
 }
 

@@ -2,11 +2,30 @@
 #define __GLMOTOR_H__
 
 #ifdef HAVE_GLESV2
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+# include <GLES2/gl2.h>
+# include <GLES2/gl2ext.h>
 
-extern PFNGLBINDVERTEXARRAYOESPROC glBindVertexArray;
-extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArrays;
+extern PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOES;
+extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES;
+
+# define glBindVertexArray glBindVertexArrayOES
+# define glGenVertexArrays glGenVertexArraysOES
+
+# ifndef GL_R8
+#  define GL_R8 GL_R8_EXT
+# endif
+# ifndef GL_UNPACK_ROW_LENGTH
+#  define GL_UNPACK_ROW_LENGTH GL_UNPACK_ROW_LENGTH_EXT
+# endif
+# ifndef GL_RGBA8
+#  define GL_RGBA8 GL_RGBA8_OES
+# endif
+#else
+# ifdef HAVE_GLEW
+#  include <GL/glew.h>
+# endif
+# include <GL/gl.h>
+# include <GL/glext.h>
 #endif
 
 #define GLMOTOR_DEPTH_BUFFER 0

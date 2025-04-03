@@ -3,14 +3,6 @@
 #include <string.h>
 #include <pthread.h>
 
-#ifdef HAVE_GLESV2
-# include <GLES2/gl2.h>
-# include <GLES2/gl2ext.h>
-#else
-# include <GL/glew.h>
-# include <GL/gl.h>
-#endif
-
 #include "glmotor.h"
 #include "mat.h"
 #include "log.h"

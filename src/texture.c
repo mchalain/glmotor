@@ -7,11 +7,9 @@
 
 #include <linux/videodev2.h>
 
-#ifdef HAVE_GLESV2
-# include <GLES2/gl2.h>
-# include <GLES2/gl2ext.h>
-#else
-# include <GL/glew.h>
+#ifdef HAVE_EGL
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 #endif
 
 #include "glmotor.h"
@@ -362,9 +360,6 @@ static int camerabuffer(int fd, int id, void **mem, size_t *size, size_t *offset
 }
 
 #ifdef HAVE_EGL
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-
 extern GLMOTOR_EXPORT EGLDisplay* glmotor_egldisplay(GLMotor_t *motor);
 
 PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;

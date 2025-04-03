@@ -2,14 +2,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define GLMOTOR_SURFACE_S int
+#include "glmotor.h"
+
 #ifdef HAVE_GLESV2
 # error "glut doesn't support gles"
 #endif
-#include <GL/gl.h>
 #include <GL/freeglut.h>
 
-#define GLMOTOR_SURFACE_S int
-#include "glmotor.h"
 #include "log.h"
 
 GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int argc, char** argv)

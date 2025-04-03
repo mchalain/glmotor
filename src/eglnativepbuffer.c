@@ -3,11 +3,7 @@
 #include <unistd.h>
 #include <dlfcn.h>
 
-#ifdef HAVE_GLESV2
-# include <GLES2/gl2.h>
-#else
-# include <GL/gl.h>
-#endif
+#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
