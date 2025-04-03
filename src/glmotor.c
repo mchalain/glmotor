@@ -57,11 +57,6 @@ static int init_glew()
 
 GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, char** argv)
 {
-#ifdef HAVE_GLEW
-	glewExperimental = 1;
-	if (init_glew())
-		return -1;
-#endif
 	GLMotor_Surface_t *window = NULL;
 	int mode = 0;
 	int opt;
@@ -84,6 +79,14 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, cha
 	if (window == NULL)
 	{
 	}
+#ifdef HAVE_GLEW
+	/**
+	 * glew must be call after surface context
+	 */
+	glewExperimental = 1;
+	if (init_glew())
+		return NULL;
+#endif
 	GLMotor_t *motor = calloc(1, sizeof(*motor));
 	motor->width = config->width;
 	motor->height = config->height;
