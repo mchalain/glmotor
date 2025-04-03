@@ -137,13 +137,14 @@ int main(int argc, char** argv)
 		.texture = NULL,
 		.width = 640,
 		.height = 480,
+		.camera = { 0.0f, 0.0f, 1.0f},
 	};
 	int mode = 0;
 	int opt;
 	opterr = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-W:H:o:v:f:C:t:i");
+		opt = getopt(argc, argv, "-W:H:o:v:f:C:t:ic:");
 		switch (opt)
 		{
 			case 'W':
@@ -170,6 +171,13 @@ int main(int argc, char** argv)
 			break;
 			case 'i':
 				mode = MODE_INTERACTIV;
+			break;
+			case 'c':
+#if SCENE_MOVECAMERA == y
+				sscanf(optarg, "%f,%f,%f", &config.camera[0], &config.camera[1], &config.camera[2]);
+#else
+				err("glmotor: camera is not supported");
+#endif
 			break;
 		}
 	} while (opt != -1);
@@ -212,6 +220,10 @@ int main(int argc, char** argv)
 	}
 	scene_appendobject(scene, obj);
 
+#if SCENE_MOVECAMERA == y
+	GLfloat target[3] = { 0.0f, 0.0f, 0.0f};
+	scene_movecamera(scene, config.camera, target);
+#endif
 #ifdef HAVE_LIBINPUT
 	GLMotor_Input_t *input = NULL;
 	if (mode & MODE_INTERACTIV)
