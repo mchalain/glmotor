@@ -137,7 +137,11 @@ int main(int argc, char** argv)
 		.texture = NULL,
 		.width = 640,
 		.height = 480,
+#if SCENE_MOVECAMERA == y
+		.camera = { 0.0f, 0.0f, 1.5f},
+#else
 		.camera = { 0.0f, 0.0f, 1.0f},
+#endif
 	};
 	int mode = 0;
 	int opt;
@@ -223,6 +227,7 @@ int main(int argc, char** argv)
 #if SCENE_MOVECAMERA == y
 	GLfloat target[3] = { 0.0f, 0.0f, 0.0f};
 	scene_movecamera(scene, config.camera, target);
+	scene_perspective(scene, 0.698132, 1.0f, 10.0f);
 #endif
 #ifdef HAVE_LIBINPUT
 	GLMotor_Input_t *input = NULL;

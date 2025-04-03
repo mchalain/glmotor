@@ -100,8 +100,23 @@ GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *came
 	mat4_lookat(scene->eye, scene->center, scene->up, scene->view);
 	scene->pview = scene->view;
 }
+GLMOTOR_EXPORT void scene_perspective(GLMotor_Scene_t *scene, const GLfloat angle, const GLfloat near, const GLfloat far)
+{
+	GLfloat aspect = ((GLfloat)scene->motor->width) / ((GLfloat)scene->motor->height);
+	GLfloat *perspective = scene->view;
+	GLfloat tmp[16];
+	mat4_diag(tmp);
+	if (scene->pview)
+		perspective = tmp;
+	mat4_perspective(angle, aspect, near, far, perspective);
+	if (perspective == tmp)
+		mat4_multiply4(tmp, scene->view, scene->view);
+	scene->pview = scene->view;
+}
 #else
 GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target)
+{}
+GLMOTOR_EXPORT void scene_perspective(GLMotor_Scene_t *scene, const GLfloat angle, const GLfloat near, const GLfloat far)
 {}
 #endif
 
