@@ -272,8 +272,11 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			fseek(pFile, end - line + 1, SEEK_CUR);
 			*end = '\0';
 		}
+		//dbg("obj: %.*s", end - line, line);
 		char *next = NULL;
 		numline++;
+		if (line[0] == '#')
+			continue;
 		if (! strncmp("vc", line, 2))
 		{
 			next = line + 2;
@@ -334,41 +337,39 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			GLuint position[3] = {0};
 			GLuint uv[3] = {0};
 			GLuint normal[3] = {0};
-			GLuint format = 1;
-			int ret = 0;
-			while (ret == 0)
+			int i = 0;
+			char *s = NULL;
+			while (i < 3)
 			{
-				switch (format)
+				while(isspace(*next)) next++;
+				sscanf(next, "%u", &position[i]);
+				s = strchr(next, '/');
+				if ( s == NULL)
 				{
-				case 1:
-					ret = sscanf(next, "%u %u %u",
-						&position[0], &position[1], &position[2]);
-				break;
-				case 2:
-					ret = sscanf(next, "%u/%u %u/%u %u/%u",
-						&position[0], &uv[0],
-						&position[1], &uv[1],
-						&position[2], &uv[2]);
-				break;
-				case 3:
-					ret = sscanf(next, "%u/%u/%u %u/%u/%u %u/%u/%u",
-						&position[0], &uv[0], &normal[0],
-						&position[1], &uv[1], &normal[1],
-						&position[2], &uv[2], &normal[2]);
-				break;
-				default:
-					ret = -1;
+					s = strchr(next, ' ');
+					if ( s != NULL)
+						next = s + 1;
+					i++;
+					continue;
 				}
-				if (ret != 3 * format)
+				next = s + 1;
+				sscanf(next, "%u", &uv[i]);
+				s = strchr(next, '/');
+				if ( s == NULL)
 				{
-					format++;
-					ret = 0;
+					i++;
+					continue;
 				}
-			}
-			if (ret != 3 * format)
-			{
-				err("glmotor: object vertex misformated f %d line %u", ret, numline);
-				break;
+				next = s + 1;
+				sscanf(next, "%u", &normal[i]);
+				s = strchr(next, ' ');
+				if ( s == NULL)
+				{
+					i++;
+					continue;
+				}
+				next = s + 1;
+				i++;
 			}
 			object_appendface(obj, 1, position);
 		}
@@ -453,6 +454,10 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			}
 			if (ptr || protate)
 				object_appendkinematic(obj, ptr, protate, repeats);
+		}
+		else
+		{
+			warn("glmotor: obj file entry not supported\n\t%.*s", end - line, line);
 		}
 	} while (ret != 0);
 
