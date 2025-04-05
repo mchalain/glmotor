@@ -7,6 +7,7 @@
 #include "glmotor.h"
 #include "loader.h"
 #include "log.h"
+#include "simpleshader.h"
 
 static GLint getFileSize(FILE* const pFile)
 {
@@ -125,10 +126,16 @@ static GLuint program_build(const GLchar *vertexSource, GLuint vertexSize, const
 {
 	GLuint vertexID = load_shader(GL_VERTEX_SHADER, &vertexSource, &vertexSize, 1);
 	if (vertexID == 0)
+	{
+		err("on vertex");
 		return 0;
+	}
 	GLuint fragmentID = load_shader(GL_FRAGMENT_SHADER, fragmentSource, fragmentSize, nbfragments);
 	if (fragmentID == 0)
+	{
+		err("on fragment");
 		return 0;
+	}
 
 	GLuint programID = glCreateProgram();
 
@@ -161,16 +168,29 @@ static GLuint program_build(const GLchar *vertexSource, GLuint vertexSize, const
 
 GLMOTOR_EXPORT GLuint program_load(const char *vertex, const char *fragments[], int nbfragments)
 {
-	GLchar* vertexSource = NULL;
+	GLchar* data[1+MAX_FRAGS] = {NULL};
+	const GLchar* vertexSource = NULL;
 	GLuint vertexSize = 0;
-	vertexSize = readFile(vertex, &vertexSource);
+	vertexSize = readFile(vertex, &data[MAX_FRAGS]);
+	if (vertexSize == 0)
+		vertexSource = simple_vertex;
+	else
+		vertexSource = data[MAX_FRAGS];
 
-	GLchar* fragmentSource[MAX_FRAGS] = {0};
+	const GLchar* fragmentSource[MAX_FRAGS] = {0};
 	GLuint fragmentSize[MAX_FRAGS] = {0};
 	for (int i = 0; i < nbfragments; i++)
 	{
+		fragmentSize[i] = readFile(fragments[i], &data[i]);
+		if (fragmentSize[0] == 0)
+		{
+			fragmentSource[0] = simple_fragment;
+			nbfragments = 1;
+			break;
+		}
+		else
+			fragmentSource[i] = data[i];
 		warn("glmotor: load %s", fragments[i]);
-		fragmentSize[i] = readFile(fragments[i], &fragmentSource[i]);
 		if (fragmentSize[i] == 0)
 		{
 			nbfragments--;
@@ -183,12 +203,18 @@ GLMOTOR_EXPORT GLuint program_load(const char *vertex, const char *fragments[], 
 		return 0;
 	}
 
+	if (vertexSize == 0)
+		vertexSize = sizeof(simple_vertex) - 1;
+	if (fragmentSize[0] == 0)
+		fragmentSize[0] = sizeof(simple_fragment) - 1;
 	GLuint programID = program_build(vertexSource, vertexSize, fragmentSource, fragmentSize, nbfragments);
 	for (int i = 0; i < nbfragments; i++)
 	{
-		free(fragmentSource[i]);
+		if (data[i])
+			free(data[i]);
 	}
-	free(vertexSource);
+	if (data[MAX_FRAGS])
+		free(data[MAX_FRAGS]);
 	return programID;
 }
 
