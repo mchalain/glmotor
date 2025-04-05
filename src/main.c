@@ -138,17 +138,17 @@ int main(int argc, char** argv)
 		.width = 640,
 		.height = 480,
 #if SCENE_MOVECAMERA == y
-		.camera = { 0.0f, 0.0f, 1.5f},
-#else
-		.camera = { 0.0f, 0.0f, 1.0f},
+		.camera = { 0.0f, 0.0f, 1.1f},
+		.perspective = {M_PI / 3, 0.0f, 1.0f},
 #endif
 	};
 	int mode = 0;
 	int opt;
 	opterr = 0;
+	int ret = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-W:H:o:v:f:C:t:ic:");
+		opt = getopt(argc, argv, "-W:H:o:v:f:C:t:ic:p:");
 		switch (opt)
 		{
 			case 'W':
@@ -178,7 +178,18 @@ int main(int argc, char** argv)
 			break;
 			case 'c':
 #if SCENE_MOVECAMERA == y
-				sscanf(optarg, "%f,%f,%f", &config.camera[0], &config.camera[1], &config.camera[2]);
+				ret = sscanf(optarg, "%f,%f,%f", &config.camera[0], &config.camera[1], &config.camera[2]);
+				if (ret < 3)
+					config.camera[2] = 0.0;
+#else
+				err("glmotor: camera is not supported");
+#endif
+			break;
+			case 'p':
+#if SCENE_MOVECAMERA == y
+				ret = sscanf(optarg, "%f,%f,%f", &config.perspective[0], &config.perspective[1], &config.perspective[2]);
+				if (ret < 3)
+					config.perspective[0] = 0.0;
 #else
 				err("glmotor: camera is not supported");
 #endif
@@ -226,8 +237,11 @@ int main(int argc, char** argv)
 
 #if SCENE_MOVECAMERA == y
 	GLfloat target[3] = { 0.0f, 0.0f, 0.0f};
-	scene_movecamera(scene, config.camera, target);
-	scene_perspective(scene, 0.698132, 1.0f, 10.0f);
+	if (config.camera[2] != 0)
+		scene_movecamera(scene, config.camera, target);
+	if (config.perspective[0] > 0)
+		scene_perspective(scene, config.perspective[0],
+			config.perspective[1], config.perspective[2]);
 #endif
 #ifdef HAVE_LIBINPUT
 	GLMotor_Input_t *input = NULL;

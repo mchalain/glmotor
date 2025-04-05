@@ -59,6 +59,7 @@ struct GLMotor_config_s
 	GLuint height;
 	int nbfragmentshaders;
 	GLfloat camera[3];
+	GLfloat perspective[3];
 };
 
 typedef struct GLMotor_list_s GLMotor_list_t;
