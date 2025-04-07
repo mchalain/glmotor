@@ -101,7 +101,7 @@ static void native_destroy(EGLNativeDisplayType native_display)
 struct eglnative_motor_s *eglnative_x = &(struct eglnative_motor_s)
 {
 	.name = "x",
-	.type = EGL_WINDOW_BIT,
+	.type = EGL_PBUFFER_BIT, /// EGL config must bind to texture
 	.display = native_display,
 	.createwindow = native_createwindow,
 	.windowsize = NULL,
