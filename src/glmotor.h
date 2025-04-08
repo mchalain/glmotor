@@ -60,6 +60,7 @@ struct GLMotor_config_s
 	int nbfragmentshaders;
 	GLfloat camera[3];
 	GLfloat perspective[3];
+	GLfloat background[4];
 };
 
 typedef struct GLMotor_list_s GLMotor_list_t;
@@ -186,6 +187,7 @@ GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj);
 
 typedef struct GLMotor_Scene_s GLMotor_Scene_t;
 GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor);
+GLMOTOR_EXPORT void scene_setbackground(GLMotor_Scene_t *scene, GLfloat color[4]);
 GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t *obj);
 GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const char *name);
 GLMOTOR_EXPORT GLMotor_Object_t *scene_nextobject(GLMotor_Scene_t *scene, GLMotor_Object_t *prev);

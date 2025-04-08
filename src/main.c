@@ -141,6 +141,7 @@ int main(int argc, char** argv)
 		.camera = { 0.0f, 0.0f, 1.1f},
 		.perspective = {M_PI / 3, 0.0f, 1.0f},
 #endif
+		.background = {0.0,0.0,0.0,1.0},
 	};
 	int mode = 0;
 	int opt;
@@ -148,7 +149,7 @@ int main(int argc, char** argv)
 	int ret = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-hW:H:o:v:f:C:t:ic:p:");
+		opt = getopt(argc, argv, "-hW:H:B:o:v:f:C:t:ic:p:");
 		switch (opt)
 		{
 			case 'h':
@@ -171,6 +172,11 @@ int main(int argc, char** argv)
 			break;
 			case 'H':
 				config.height = atoi(optarg);
+			break;
+			case 'B':
+				ret = sscanf(optarg, "%f,%f,%f,%f", &config.background[0], &config.background[1], &config.background[2], &config.background[3]);
+				if (ret < 4)
+					config.background[3] = 1.0;
 			break;
 			case 'C':
 				main_parseconfig(optarg, &config);
@@ -248,6 +254,7 @@ int main(int argc, char** argv)
 		glmotor_destroy(motor);
 		return 1;
 	}
+	scene_setbackground(scene, config.background);
 	scene_appendobject(scene, obj);
 
 #if SCENE_MOVECAMERA == y

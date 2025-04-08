@@ -19,6 +19,7 @@ struct GLMotor_Scene_s
 	GLfloat up[3];
 	GLfloat view[16];
 	GLfloat *pview;
+	GLfloat background[4];
 };
 static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height);
 
@@ -119,6 +120,12 @@ GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *came
 GLMOTOR_EXPORT void scene_perspective(GLMotor_Scene_t *scene, const GLfloat angle, const GLfloat near, const GLfloat far)
 {}
 #endif
+
+GLMOTOR_EXPORT void scene_setbackground(GLMotor_Scene_t *scene, GLfloat color[4])
+{
+	memcpy(scene->background, color, sizeof(scene->background));
+	glClearColor(scene->background[0], scene->background[1], scene->background[2], scene->background[3]);
+}
 
 static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height)
 {
