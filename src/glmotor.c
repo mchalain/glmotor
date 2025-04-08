@@ -63,11 +63,14 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, cha
 	optind = 1;
 	do
 	{
-		opt = getopt(argc, argv, "O");
+		opt = getopt(argc, argv, "Oh");
 		switch (opt)
 		{
 			case 'O':
 				mode = 1;
+			break;
+			case 'h':
+				printf("\t-O\t\tOffscreeen mode");
 			break;
 		}
 	} while (opt != -1);

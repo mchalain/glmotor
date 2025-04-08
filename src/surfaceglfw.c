@@ -38,9 +38,13 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	optind = 1;
 	do
 	{
-		opt = getopt(argc, argv, "n:");
+		opt = getopt(argc, argv, "hn:");
 		switch (opt)
 		{
+			case 'h':
+				fprintf(stderr, "\t-n name\tset window name\n");
+				return -1;
+			break;
 			case 'n':
 				name = optarg;
 			break;

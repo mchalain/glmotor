@@ -152,18 +152,20 @@ int main(int argc, char** argv)
 		switch (opt)
 		{
 			case 'h':
-				fprintf(stderr, "%s [-h | options]", argv[0]);
-				fprintf(stderr, "\t-h\t\tdislay this help");
-				fprintf(stderr, "\t-W width\tset dislay width");
-				fprintf(stderr, "\t-H height\tset dislay height");
-				fprintf(stderr, "\t-o file\tset object file to display");
-				fprintf(stderr, "\t-t file\tset texture file to display");
-				fprintf(stderr, "\t-v file\tset vertex shader file to use");
-				fprintf(stderr, "\t-f file\tset fragment shader file to use");
-				fprintf(stderr, "\t-c x,y,z\tset camera position with 3 float values");
-				fprintf(stderr, "\t-p a,n,f\tset perspective view with angle, near and far float values");
-				fprintf(stderr, "\t-C file\tset configuration file to use");
-				fprintf(stderr, "\t-i\t\tenter in intearctive mode");
+				fprintf(stderr, "%s [-h | options]\n", argv[0]);
+				fprintf(stderr, "\t-h\t\tdislay this help\n");
+				fprintf(stderr, "\t-W width\tset dislay width\n");
+				fprintf(stderr, "\t-H height\tset dislay height\n");
+				fprintf(stderr, "\t-B r,g,b,a\tset background color\n");
+				fprintf(stderr, "\t-o file\tset object file to display\n");
+				fprintf(stderr, "\t-t file\tset texture file to display\n");
+				fprintf(stderr, "\t-v file\tset vertex shader file to use\n");
+				fprintf(stderr, "\t-f file\tset fragment shader file to use\n");
+				fprintf(stderr, "\t-c x,y,z\tset camera position with 3 float values\n");
+				fprintf(stderr, "\t-p a,n,f\tset perspective view with angle, near and far float values\n");
+				fprintf(stderr, "\t-C file\tset configuration file to use\n");
+				fprintf(stderr, "\t-i\t\tenter in intearctive mode\n");
+			break;
 			case 'W':
 				config.width = atoi(optarg);
 			break;

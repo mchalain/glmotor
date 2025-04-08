@@ -138,9 +138,15 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	optind = 1;
 	do
 	{
-		opt = getopt(argc, argv, "n:N:L:");
+		opt = getopt(argc, argv, "hn:N:L:");
 		switch (opt)
 		{
+			case 'h':
+				fprintf(stderr, "\t-n name\tset window name\n");
+				fprintf(stderr, "\t-N native\tset native windowing system\n\t\twl: wayland\n\t\tx: X11\n\t\tdrm: direct rendering\n\t\tjpeg: jpeg file\n\t\tpbuffer: offscreen buffers\n");
+				fprintf(stderr, "\t-L Library\tset library for offscreen buffers consumer\n");
+				native = NULL;
+			break;
 			case 'n':
 				name = optarg;
 			break;
