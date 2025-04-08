@@ -148,9 +148,22 @@ int main(int argc, char** argv)
 	int ret = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-W:H:o:v:f:C:t:ic:p:");
+		opt = getopt(argc, argv, "-hW:H:o:v:f:C:t:ic:p:");
 		switch (opt)
 		{
+			case 'h':
+				fprintf(stderr, "%s [-h | options]", argv[0]);
+				fprintf(stderr, "\t-h\t\tdislay this help");
+				fprintf(stderr, "\t-W width\tset dislay width");
+				fprintf(stderr, "\t-H height\tset dislay height");
+				fprintf(stderr, "\t-o file\tset object file to display");
+				fprintf(stderr, "\t-t file\tset texture file to display");
+				fprintf(stderr, "\t-v file\tset vertex shader file to use");
+				fprintf(stderr, "\t-f file\tset fragment shader file to use");
+				fprintf(stderr, "\t-c x,y,z\tset camera position with 3 float values");
+				fprintf(stderr, "\t-p a,n,f\tset perspective view with angle, near and far float values");
+				fprintf(stderr, "\t-C file\tset configuration file to use");
+				fprintf(stderr, "\t-i\t\tenter in intearctive mode");
 			case 'W':
 				config.width = atoi(optarg);
 			break;
