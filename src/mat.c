@@ -8,10 +8,10 @@
 void mat4_diag(GLfloat A[])
 {
 	memset(A, 0, 16 * sizeof(*A));
-	A[0] = A[5] = A[10] = A[15] = 1;
+	A[0] = A[5] = A[10] = A[15] = 1.0;
 }
 
-void mat4_multiply4(GLfloat A[], GLfloat B[], GLfloat AB[])
+void mat4_multiply4(const GLfloat A[], const GLfloat B[], GLfloat AB[])
 {
 	GLfloat TMP[16];
 	// line 1
@@ -38,7 +38,7 @@ void mat4_multiply4(GLfloat A[], GLfloat B[], GLfloat AB[])
 	memcpy(AB, TMP, sizeof(TMP));
 }
 
-static void _add(GLfloat A[], GLfloat B[], GLfloat AB[], unsigned int size, int sign)
+static void _add(const GLfloat A[], const GLfloat B[], GLfloat AB[], unsigned int size, int sign)
 {
 	if (sign < 0)
 		sign = -1;
@@ -50,27 +50,27 @@ static void _add(GLfloat A[], GLfloat B[], GLfloat AB[], unsigned int size, int 
 	}
 }
 
-void mat_add(GLfloat A[], int sign, GLfloat B[], GLfloat AB[], unsigned int size)
+void mat_add(const GLfloat A[], int sign, const GLfloat B[], GLfloat AB[], unsigned int size)
 {
 	_add(A, B, AB, size * size, sign);
 }
 
-void mat4_add4(GLfloat A[], int sign, GLfloat B[], GLfloat AB[])
+void mat4_add4(const GLfloat A[], int sign, const GLfloat B[], GLfloat AB[])
 {
 	_add(A, B, AB, 16, sign);
 }
 
-void vec_add(GLfloat A[], int sign, GLfloat B[], GLfloat AB[], unsigned int size)
+void vec_add(const GLfloat A[], int sign, const GLfloat B[], GLfloat AB[], unsigned int size)
 {
 	_add(A, B, AB, size, sign);
 }
 
-void vec3_add(GLfloat A[], int sign, GLfloat B[], GLfloat AB[])
+void vec3_add(const GLfloat A[], int sign, const GLfloat B[], GLfloat AB[])
 {
 	_add(A, B, AB, 3, sign);
 }
 
-void mat4_frustum(GLfloat frame[], GLfloat near, GLfloat far, GLfloat O[])
+void mat4_frustum(const GLfloat frame[], const GLfloat near, const GLfloat far, GLfloat O[])
 {
 	if ((frame[0] - frame[1] == 0.0f) ||
 		(frame[2] - frame[3] == 0.0f) ||
@@ -91,7 +91,7 @@ void mat4_frustum(GLfloat frame[], GLfloat near, GLfloat far, GLfloat O[])
 	O[11] = -(2.f * far * near) / (far- near);
 }
 #if 1
-void mat4_perspective(GLfloat angle, GLfloat aspect, GLfloat near, GLfloat far, GLfloat O[])
+void mat4_perspective(const GLfloat angle, const GLfloat aspect, const GLfloat near, const GLfloat far, GLfloat O[])
 {
 	if (angle <= 0.0f || angle >= M_PI)
 		return;
@@ -103,7 +103,7 @@ void mat4_perspective(GLfloat angle, GLfloat aspect, GLfloat near, GLfloat far, 
 	mat4_frustum(frame, near, far, O);
 }
 #else
-void mat4_perspective(GLfloat angle, GLfloat aspect, GLfloat near, GLfloat far, GLfloat O[])
+void mat4_perspective(const GLfloat angle, const GLfloat aspect, const GLfloat near, const GLfloat far, GLfloat O[])
 {
 	if (angle <= 0.0f || angle >= M_PI)
 		return;
@@ -120,7 +120,7 @@ void mat4_perspective(GLfloat angle, GLfloat aspect, GLfloat near, GLfloat far, 
 #endif
 
 #ifdef DEBUG
-void mat4_log(GLfloat mat[])
+void mat4_log(const GLfloat mat[])
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -146,7 +146,7 @@ float normalizef(float u, float v, float w)
 	return sqrtf(squaref(u) + squaref(v) + squaref(w));
 }
 
-void vec3_normalize(GLfloat I[], GLfloat O[])
+void vec3_normalize(const GLfloat I[], GLfloat O[])
 {
 	GLfloat N = normalizef(I[0], I[1], I[2]);
 	if (N == 0)
@@ -156,7 +156,7 @@ void vec3_normalize(GLfloat I[], GLfloat O[])
 	O[2] = I[2] / N;
 }
 
-void vec3_multiply(GLfloat A[], GLfloat B[], GLfloat AB[])
+void vec3_multiply(const GLfloat A[], const GLfloat B[], GLfloat AB[])
 {
 	GLfloat TMP[3];
 	TMP[0] = (A[1] * B[2]) - (A[2] * B[1]);
@@ -165,7 +165,7 @@ void vec3_multiply(GLfloat A[], GLfloat B[], GLfloat AB[])
 	memcpy(AB, TMP, sizeof(TMP));
 }
 
-GLfloat vec3_dot(GLfloat A[], GLfloat B[])
+GLfloat vec3_dot(const GLfloat A[], const GLfloat B[])
 {
 	GLfloat TMP = 0;
 	for (int i = 0; i < 3; i++)
@@ -173,7 +173,7 @@ GLfloat vec3_dot(GLfloat A[], GLfloat B[])
 	return TMP;
 }
 
-void mat4_lookat(GLfloat eye[], GLfloat center[], GLfloat up[], GLfloat view[])
+void mat4_lookat(const GLfloat eye[], const GLfloat center[], const GLfloat up[], GLfloat view[])
 {
 	GLfloat *forward = &view[8];
 	vec3_add(eye, -1, center, forward);
