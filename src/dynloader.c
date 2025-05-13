@@ -173,9 +173,15 @@ GLMOTOR_EXPORT GLuint program_load(const char *vertex, const char *fragments[], 
 	GLuint vertexSize = 0;
 	vertexSize = readFile(vertex, &data[MAX_FRAGS]);
 	if (vertexSize == 0)
+	{
+		warn("use default vertex shader");
 		vertexSource = simple_vertex;
+	}
 	else
+	{
+		warn("glmotor: load %s", vertex);
 		vertexSource = data[MAX_FRAGS];
+	}
 
 	const GLchar* fragmentSource[MAX_FRAGS] = {0};
 	GLuint fragmentSize[MAX_FRAGS] = {0};
@@ -184,6 +190,7 @@ GLMOTOR_EXPORT GLuint program_load(const char *vertex, const char *fragments[], 
 		fragmentSize[i] = readFile(fragments[i], &data[i]);
 		if (fragmentSize[0] == 0)
 		{
+			warn("use default fragment shader");
 			fragmentSource[0] = simple_fragment;
 			nbfragments = 1;
 			break;
