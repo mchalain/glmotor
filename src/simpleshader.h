@@ -3,21 +3,24 @@
 
 const static char simple_vertex[] = "\
 attribute vec3 vPosition;\n\
-attribute vec3 vColor;\n\
+attribute vec4 vColor;\n\
 attribute vec2 vUV;\n\
+attribute vec3 vNormal;\n\
 varying vec4 color;\n\
 varying vec2 texUV;\n\
 varying vec2 resolution;\n\
+varying vec3 normal;\n\
 \n\
 uniform mat4 vMove;\n\
-uniform vec2 vResolution;\n\
+uniform vec4 vResolution;\n\
 \n\
 void main (void)\n\
 {\n\
-	gl_Position = vMove * vec4(vPosition, 1);\n\
-	color = vec4(vColor, 1.0);\n\
+	gl_Position = vMove * vec4(vPosition, 1.0);\n\
+	color = vColor;\n\
 	texUV = vUV;\n\
-	resolution = vResolution;\n\
+	resolution = vResolution.zw;\n\
+	normal = vNormal;\n\
 }\n";
 
 const static char simple_fragment[] = "\
@@ -25,6 +28,8 @@ const static char simple_fragment[] = "\
 precision mediump float;\n\
 #endif\n\
 varying vec4 color;\n\
+varying vec3 normal;\n\
+varying vec2 resolution;\n\
 \n\
 void main(void)\n\
 {\n\

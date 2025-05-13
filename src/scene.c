@@ -155,15 +155,14 @@ static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint h
 {
 	GLMotor_t * motor = scene->motor;
 	GLfloat vResolution[] = {
-
-		 1.0f, 1.0f,
+		 width, height, 1.0f, 1.0f,
 	};
-	vResolution[0] /= (float)width;
-	vResolution[1] /= (float)height;
+	vResolution[2] /= (float)width;
+	vResolution[3] /= (float)height;
 	for (int i = 0; i < motor->nbprograms; i++)
 	{
 		GLuint resID = glGetUniformLocation(motor->programID[i], "vResolution");
-		glUniform2fv(resID, 1, vResolution);
+		glUniform4fv(resID, 1, vResolution);
 	}
 
 	return 0;
