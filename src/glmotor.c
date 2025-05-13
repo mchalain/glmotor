@@ -70,7 +70,8 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, cha
 				mode = 1;
 			break;
 			case 'h':
-				printf("\t-O\t\tOffscreeen mode");
+				printf("\t-O\t\tOffscreeen mode\n");
+				return NULL;
 			break;
 		}
 	} while (opt != -1);
