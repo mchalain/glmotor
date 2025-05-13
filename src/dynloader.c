@@ -306,11 +306,11 @@ GLMOTOR_EXPORT GLMotor_Object_t * object_load(GLMotor_t *motor, GLchar *name, co
 			*end = '\0';
 		}
 		//dbg("obj: %.*s", end - line, line);
-		char *next = NULL;
+		char *next = line;
 		numline++;
-		if (line[0] == '#')
+		if (*next == '#' || *next == '\0')
 			continue;
-		if (! strncmp("vc", line, 2))
+		if (! strncmp("vc", next, 2))
 		{
 			next = line + 2;
 			GLfloat color[4] = {0};
@@ -662,9 +662,23 @@ GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadV4L2(GLMotor_t *motor, const char
 	return tex;
 }
 
+GLMOTOR_EXPORT GLMotor_Texture_t * texture_loadcolor(GLMotor_t *motor, const char *config)
+{
+	GLubyte r = (0xCC);
+	GLubyte g = (0xCC);
+	GLubyte b = (0xCC);
+	sscanf(config, "%2x%2x%2x", &r, &g, &b);
+	GLubyte pixels[3 * 1] =
+	{
+		r,   g,   b,
+	};
+	GLMotor_Texture_t *tex = texture_create(motor, 1, 1, FOURCC('R', 'G', '2', '4'), 0, pixels);
+	return tex;
+}
+
 GLMOTOR_EXPORT GLMotor_Texture_t * texture_loaddefault(GLMotor_t *motor, const char *config)
 {
-	GLubyte pixels[4 * 4] =
+	GLubyte pixels[3 * 4] =
 	{
 		255,   0,   0, // Red
 		  0, 255,   0, // Green
@@ -678,6 +692,8 @@ GLMOTOR_EXPORT GLMotor_Texture_t * texture_loaddefault(GLMotor_t *motor, const c
 GLMOTOR_EXPORT GLMotor_Texture_t * texture_load(GLMotor_t *motor, const char *config)
 {
 	size_t length = strlen(config);
+	if (length >= 6 && !strncmp("color", config, 5))
+		return texture_loadcolor(motor, config + 6);
 	if (length >= 6 && !strncmp("default", config, 6))
 		return texture_loaddefault(motor, config + 6);
 	if (length >= 4 &&!strncmp("v4l2", config, 4))
