@@ -55,6 +55,7 @@ struct GLMotor_Texture_s
 	GLuint width;
 	GLuint height;
 	GLuint stride;
+	GLuint texturefamily;
 	uint32_t fourcc;
 	void *private;
 	GLint (*draw)(GLMotor_Texture_t *tex);
@@ -74,8 +75,9 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 	width = (width >  max_texture_size)? max_texture_size:width;
 	height = (height >  max_texture_size)? max_texture_size:height;
 
+	GLuint texturefamily = GL_TEXTURE_2D;
 	// "Bind" the newly created texture : all future texture functions will modify this texture
-	glBindTexture(GL_TEXTURE_2D, textureID);
+	glBindTexture(texturefamily, textureID);
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 
 	unsigned int components  = (fourcc == FOURCC('D','X','T','1')) ? 3 : 4;
@@ -113,7 +115,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 		/* load the mipmaps */
 		for (unsigned int level = 0; level < mipmaps && (width || height); ++level)
 		{
-			glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height,
+			glCompressedTexImage2D(texturefamily, level, format, width, height,
 				0, size, map + offset);
 
 			offset += size;
@@ -129,15 +131,15 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 	else
 	{
 		// Give the image to OpenGL
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, map);
+		glTexImage2D(texturefamily, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, map);
 		stride = width * blockSize / 8;
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(texturefamily, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(texturefamily, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(texturefamily, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(texturefamily, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		if (mipmaps)
-			glGenerateMipmap(GL_TEXTURE_2D);
+			glGenerateMipmap(texturefamily);
 	}
 
 	tex = calloc(1, sizeof(*tex));
@@ -146,6 +148,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_create(GLMotor_t *motor, GLuint width,
 	tex->height = height;
 	tex->stride = stride;
 	tex->fourcc = fourcc;
+	tex->texturefamily = texturefamily;
 	return tex;
 }
 
@@ -154,7 +157,7 @@ GLMOTOR_EXPORT GLint texture_setprogram(GLMotor_Texture_t *tex, GLuint programID
 	GLuint texture  = glGetUniformLocation(programID, "vTexture");
 	if (texture == -1)
 	{
-		err("glmotor: try to apply texture but shader doesn't contain 'vTexture'");
+		err("glmotor: apply texture error %#x", glGetError());
 		return -1;
 	}
 	glUniform1i(texture, 0);
@@ -171,7 +174,7 @@ GLMOTOR_EXPORT GLint texture_draw(GLMotor_Texture_t *tex)
 		ret = tex->draw(tex);
 	else
 	{
-		glBindTexture(GL_TEXTURE_2D, tex->ID);
+		glBindTexture(tex->texturefamily, tex->ID);
 	}
 	glUniform1i(tex->texture, 0);
 	return ret;
@@ -258,7 +261,7 @@ static int camerainit(const char *device, GLuint *width, GLuint *height, GLuint 
 	input.index = 0;
 	while (!ioctl(fd, VIDIOC_ENUMINPUT, &input))
 	{
-		dbg("input name=%s type=%d status=%d std=%lld",
+		dbg("video input name=%s type=%d status=%d std=%lld",
 			   input.name, input.type, input.status, input.std);
 		input.index++;
 	}
@@ -364,6 +367,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	int nbuffers = MAX_CAMERA_BUFFERS;
 
 	int max_texture_size = 0;
+	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 	width = (width >  max_texture_size)? max_texture_size:width;
 	height = (height >  max_texture_size)? max_texture_size:height;
@@ -387,7 +391,6 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		texturefamily = GL_TEXTURE_EXTERNAL_OES;
 	}
 
-	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 	enum v4l2_memory memory_type = V4L2_MEMORY_MMAP;
 	GLMotor_TextureCameraBuffer_t *textures = calloc(nbuffers, sizeof(GLMotor_TextureCameraBuffer_t));
 	for (int i = 0; i < nbuffers; i++)
@@ -516,7 +519,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 		break;
 		}
 #endif // HAVE_EGL
-		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindTexture(texturefamily, 0);
 
 		dbg("glmotor: buffer %d queued dmafd %d %p", i, textures[i].dmafd, textures[i].mem);
 	}
@@ -543,6 +546,7 @@ GLMOTOR_EXPORT GLMotor_Texture_t *texture_fromcamera(GLMotor_t *motor, const cha
 	tex->private = camera;
 	tex->draw = texturecamera_draw;
 	tex->destroy = texturecamera_destroy;
+	tex->texturefamily = texturefamily;
 
 	// start camera
 	int a = V4L2_BUF_TYPE_VIDEO_CAPTURE;
