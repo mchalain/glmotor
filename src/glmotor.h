@@ -62,6 +62,7 @@ struct GLMotor_config_s
 	GLfloat camera[3];
 	GLfloat perspective[3];
 	GLfloat background[4];
+	GLfloat zoom;
 };
 
 typedef struct GLMotor_Event_s GLMotor_Event_t;
@@ -172,6 +173,7 @@ GLMOTOR_EXPORT GLuint object_appenduv(GLMotor_Object_t *obj, GLuint nuvs, GLfloa
 GLMOTOR_EXPORT GLuint object_appendnormal(GLMotor_Object_t *obj, GLuint nnormals, GLfloat normals[]);
 GLMOTOR_EXPORT GLuint object_addtexture(GLMotor_Object_t *obj, GLMotor_Texture_t *tex);
 GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, GLMotor_Rotate_t *rot);
+GLMOTOR_EXPORT void object_movereset(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT const GLfloat* object_positionmatrix(GLMotor_Object_t *obj);
 GLMOTOR_EXPORT GLint object_kinematic(GLMotor_Object_t *obj, GLMotor_Translate_t **tr, GLMotor_Rotate_t **rot);
 GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, GLMotor_Rotate_t *rot, int repeats);
@@ -185,8 +187,10 @@ GLMOTOR_EXPORT void scene_setbackground(GLMotor_Scene_t *scene, GLfloat color[4]
 GLMOTOR_EXPORT void scene_appendobject(GLMotor_Scene_t *scene, GLMotor_Object_t *obj);
 GLMOTOR_EXPORT GLMotor_Object_t *scene_getobject(GLMotor_Scene_t *scene, const char *name);
 GLMOTOR_EXPORT GLMotor_Object_t *scene_nextobject(GLMotor_Scene_t *scene, GLMotor_Object_t *prev);
-GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target);
+GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat camera[3], const GLfloat target[3]);
 GLMOTOR_EXPORT void scene_perspective(GLMotor_Scene_t *scene, const GLfloat angle, const GLfloat near, const GLfloat far);
+GLMOTOR_EXPORT void scene_zoom(GLMotor_Scene_t *scene, const GLfloat scale);
+GLMOTOR_EXPORT void scene_reset(GLMotor_Scene_t *scene);
 GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene);
 GLMOTOR_EXPORT GLuint scene_width(GLMotor_Scene_t *scene);
 GLMOTOR_EXPORT GLuint scene_height(GLMotor_Scene_t *scene);

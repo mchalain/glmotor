@@ -27,6 +27,7 @@ struct GLMotor_Scene_s
 	GLfloat view[16];
 	GLfloat *pview;
 	GLfloat background[4];
+	GLfloat scale;
 };
 static GLuint scene_setresolution(GLMotor_Scene_t *scene, GLuint width, GLuint height);
 
@@ -128,6 +129,22 @@ GLMOTOR_EXPORT void scene_perspective(GLMotor_Scene_t *scene, const GLfloat angl
 {}
 #endif
 
+GLMOTOR_EXPORT void scene_zoom(GLMotor_Scene_t *scene, const GLfloat scale)
+{
+	if (((scene->scale + scale) <= 0.01) ||
+		((scene->scale + scale) >= 2.0))
+		return;
+	scene->scale += scale;
+	GLfloat *perspective = scene->view;
+	GLfloat tmp[16];
+//	if (scene->pview)
+//		perspective = tmp;
+	mat4_scale(scene->scale, perspective);
+//	if (perspective == tmp)
+//		mat4_multiply4(tmp, scene->view, scene->view);
+	scene->pview = scene->view;
+}
+
 GLMOTOR_EXPORT void scene_setbackground(GLMotor_Scene_t *scene, GLfloat color[4])
 {
 	memcpy(scene->background, color, sizeof(scene->background));
@@ -186,6 +203,12 @@ GLMOTOR_EXPORT GLMotor_Object_t *scene_nextobject(GLMotor_Scene_t *scene, GLMoto
 			return entry->next->entity;
 	}
 	return NULL;
+}
+
+GLMOTOR_EXPORT void scene_reset(GLMotor_Scene_t *scene)
+{
+	scene->scale = 1.0;
+	mat4_diag(scene->pview);
 }
 
 GLMOTOR_EXPORT GLint scene_draw(GLMotor_Scene_t *scene)

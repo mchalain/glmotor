@@ -147,6 +147,7 @@ int main(int argc, char** argv)
 		.perspective = {M_PI / 3, 0.0f, 1.0f},
 #endif
 		.background = {0.0,0.0,0.0,1.0},
+		.zoom = 0.0,
 	};
 	int mode = 0;
 	int opt;
@@ -154,7 +155,7 @@ int main(int argc, char** argv)
 	int ret = 0;
 	do
 	{
-		opt = getopt(argc, argv, "-hW:H:B:o:v:f:C:t:ic:p:");
+		opt = getopt(argc, argv, "-hW:H:B:o:v:f:C:t:ic:p:z:");
 		switch (opt)
 		{
 			case 'h':
@@ -220,6 +221,9 @@ int main(int argc, char** argv)
 				err("glmotor: camera is not supported");
 #endif
 			break;
+			case 'z':
+				ret = sscanf(optarg, "%f", &config.zoom);
+			break;
 		}
 	} while (opt != -1);
 	if (config.nbfragmentshaders == 0)
@@ -264,6 +268,7 @@ int main(int argc, char** argv)
 	scene_setbackground(scene, config.background);
 	scene_appendobject(scene, obj);
 
+	scene_zoom(scene, config.zoom);
 #if SCENE_MOVECAMERA == y
 	GLfloat target[3] = { 0.0f, 0.0f, 0.0f};
 	if (config.camera[2] != 0)

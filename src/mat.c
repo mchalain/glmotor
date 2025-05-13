@@ -5,10 +5,16 @@
 #include "glmotor.h"
 #include "log.h"
 
-void mat4_diag(GLfloat A[])
+void mat4_scale(const GLfloat scale, GLfloat A[16])
 {
 	memset(A, 0, 16 * sizeof(*A));
-	A[0] = A[5] = A[10] = A[15] = 1.0;
+	A[0] = A[5] = A[10] = scale;
+	A[15] = 1.0;
+}
+
+void mat4_diag(GLfloat A[16])
+{
+	mat4_scale(1.0, A);
 }
 
 void mat4_multiply4(const GLfloat A[], const GLfloat B[], GLfloat AB[])
