@@ -118,10 +118,10 @@ struct GLMotor_s
 typedef struct GLMotor_RotAxis_s GLMotor_RotAxis_t;
 struct GLMotor_RotAxis_s
 {
-	GLfloat A;
 	GLfloat X;
 	GLfloat Y;
 	GLfloat Z;
+	GLfloat A;
 };
 
 typedef union GLMotor_Rotate_s GLMotor_Rotate_t;
