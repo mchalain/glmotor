@@ -39,6 +39,10 @@ static void program_parsesetting(config_setting_t *parser, GLMotor_config_t *con
 			config->fragmentshader[config->nbfragmentshaders] = config_setting_get_string_elem(fragments, config->nbfragmentshaders);
 		}
 	}
+	if (config_setting_lookup_string(parser, "rootfs", &value) == CONFIG_TRUE)
+	{
+		config->rootfs = value;
+	}
 }
 #endif
 
@@ -130,8 +134,9 @@ GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name, GLuint p
 int main(int argc, char** argv)
 {
 	GLMotor_config_t config = {
-		.vertexshader = PKG_DATADIR"/simple.vert",
-		.fragmentshader = {PKG_DATADIR"/simple.frag", NULL, NULL, NULL},
+		.rootfs = NULL,
+		.vertexshader = NULL,
+		.fragmentshader = {NULL},
 		.nbfragmentshaders = 0,
 		.object = NULL,
 		.texture = NULL,
@@ -224,6 +229,8 @@ int main(int argc, char** argv)
 
 	if (motor == NULL)
 		return -1;
+	if (config.rootfs)
+		chdir(config.rootfs);
 	GLuint programID = glmotor_load(motor, config.vertexshader, config.fragmentshader, config.nbfragmentshaders);
 
 	GLMotor_Object_t *obj = NULL;

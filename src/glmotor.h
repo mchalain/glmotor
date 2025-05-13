@@ -51,6 +51,7 @@ typedef GLMOTOR_SURFACE_S GLMotor_Surface_t;
 typedef struct GLMotor_config_s GLMotor_config_t;
 struct GLMotor_config_s
 {
+	const char *rootfs;
 	const char *vertexshader;
 	const char *fragmentshader[MAX_FRAGS];
 	const char *object;
