@@ -64,13 +64,6 @@ struct GLMotor_config_s
 	GLfloat background[4];
 };
 
-typedef struct GLMotor_list_s GLMotor_list_t;
-struct GLMotor_list_s
-{
-	void *entity;
-	GLMotor_list_t *next;
-};
-
 typedef struct GLMotor_Event_s GLMotor_Event_t;
 typedef enum
 {

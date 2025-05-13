@@ -9,6 +9,13 @@
 /***********************************************************************
  * GLMotor_Scene_t
  **********************************************************************/
+typedef struct GLMotor_list_s GLMotor_list_t;
+struct GLMotor_list_s
+{
+	void *entity;
+	GLMotor_list_t *next;
+};
+
 struct GLMotor_Scene_s
 {
 	GLMotor_t *motor;
