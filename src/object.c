@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <string.h>
 #include <pthread.h>
+#include <values.h>
 
 #include "glmotor.h"
 #include "mat.h"
@@ -36,6 +37,7 @@ struct GLMotor_Object_s
 	GLuint maxfaces;
 	GLuint npoints;
 	GLuint nfaces;
+	GLfloat iscale;
 
 	int moved;
 	GLfloat move[16];
@@ -179,6 +181,12 @@ GLMOTOR_EXPORT GLuint object_appendpoint(GLMotor_Object_t *obj, GLuint npoints, 
 	glBufferSubData(GL_ARRAY_BUFFER, offset, npoints * sizeof(GLfloat) * point_vectorsize, points);
 	obj->npoints += npoints;
 #endif
+	for (int i = 0; i < npoints * point_vectorsize; i++)
+	{
+		if ((points[i] < 0 && -points[i] > obj->iscale) ||
+			(points[i] > obj->iscale))
+			obj->iscale = points[i];
+	}
 	return 0;
 }
 
@@ -202,6 +210,11 @@ GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, 
 	if (obj->ncolors == 1)
 		memcpy(obj->defaultcolor, colors, ncolors * sizeof(GLfloat) * 4);
 	return 0;
+}
+
+GLMOTOR_EXPORT void object_movereset(GLMotor_Object_t *obj)
+{
+	mat4_diag(obj->move);
 }
 
 GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, GLMotor_Rotate_t *rot)
@@ -406,6 +419,11 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj, GLfloat *view)
 GLMOTOR_EXPORT const char * object_name(GLMotor_Object_t *obj)
 {
 	return obj->name;
+}
+
+GLMOTOR_EXPORT GLfloat object_scale(GLMotor_Object_t *obj)
+{
+	return 1 / obj->iscale;
 }
 
 GLMOTOR_EXPORT void object_destroy(GLMotor_Object_t *obj)
