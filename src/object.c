@@ -211,7 +211,7 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, 
 	{
 		GLMotor_RotAxis_t *ra = &rot->ra;
 		GLfloat mq[16];
-		ra2mq(ra, mq);
+		mat4_rotate(rot->ra.A, rot->mq, mq);
 		mat4_multiply4(obj->move, mq, obj->move);
 		obj->moved = 1;
 	}
@@ -222,8 +222,7 @@ GLMOTOR_EXPORT void object_move(GLMotor_Object_t *obj, GLMotor_Translate_t *tr, 
 	}
 	if (tr && tr->coord.L != 0)
 	{
-		for (int i = 0; i < 3; i++)
-			obj->move[12 + i] += tr->mat[i] * tr->coord.L;
+		mat4_translate(tr->mat, tr->coord.L, obj->move);
 		obj->moved = 2;
 	}
 }
@@ -310,7 +309,7 @@ GLMOTOR_EXPORT void object_appendkinematic(GLMotor_Object_t *obj, GLMotor_Transl
 	}
 	if (rot && rot->mq[15] == 0)
 	{
-		ra2mq(&rot->ra, tmp.mq);
+		mat4_rotate(rot->ra.A, rot->mq, tmp.mq);
 		rot = &tmp;
 	}
 	if (rot)
@@ -387,7 +386,9 @@ GLMOTOR_EXPORT GLint object_draw(GLMotor_Object_t *obj, GLfloat *view)
 	if (obj->moved)
 	{
 		if (view)
-			mat4_multiply4(&obj->move[0], view, &obj->move[0]);
+		{
+			mat4_multiply4(view, &obj->move[0], &obj->move[0]);
+		}
 		obj->moved = 0;
 	}
 #endif

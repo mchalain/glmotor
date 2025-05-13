@@ -181,21 +181,46 @@ GLfloat vec3_dot(const GLfloat A[], const GLfloat B[])
 
 void mat4_lookat(const GLfloat eye[], const GLfloat center[], const GLfloat up[], GLfloat view[])
 {
-	GLfloat *forward = &view[8];
-	vec3_add(eye, -1, center, forward);
+	GLfloat forward[3];
+	vec3_add(center, -1, eye, forward);
 	vec3_normalize(forward, forward);
 
-	GLfloat *right = &view[0];
-	vec3_multiply(up, forward, right);
+	GLfloat right[3];
+	vec3_multiply(forward, up, right);
 	vec3_normalize(right, right);
 
-	GLfloat *uptmp = &view[4];
-	vec3_multiply(forward, right, uptmp);
+	GLfloat uptmp[3];
+	vec3_multiply(right, forward, uptmp);
+	memset(view, 0, 16 * sizeof(GLfloat));
+	view[0] = right[0];
+	view[1] = uptmp[0];
+	view[2] = -forward[0];
+
+	view[4] = right[1];
+	view[5] = uptmp[1];
+	view[6] = -forward[1];
+
+	view[8] = right[2];
+	view[9] = uptmp[2];
+	view[10] = -forward[2];
 	//vec3_normalize(uptmp, uptmp);
-	view[ 3] = -vec3_dot(eye, right);
-	view[ 7] = -vec3_dot(eye, uptmp);
-	view[11] = -vec3_dot(eye, forward);
+	view[ 3] = -eye[0];
+	view[ 7] = -eye[1];
+	view[11] = -eye[2];
+
 	view[15] = 1.0;
+}
+
+void mat4_ortho(const GLfloat frame[4], const GLfloat near, const GLfloat far, GLfloat O[16])
+{
+	memset(O, 0, sizeof(GLfloat) * 16);
+	O[ 0] = 2.0f / (frame[1] - frame[0]);
+	O[ 5] = 2.0f / (frame[3] - frame[2]);
+	O[10] = -2.0f / (far - near);
+	O[12] = -(frame[1] + frame[0]) / (frame[1] - frame[0]);
+	O[13] = -(frame[3] + frame[2]) / (frame[3] - frame[2]);
+	O[14] = -(far + near) / (far - near);
+	O[15] = 1.0f;
 }
 
 void ra2mq(GLMotor_RotAxis_t *ra, GLfloat mq[])
@@ -211,17 +236,38 @@ void ra2mq(GLMotor_RotAxis_t *ra, GLfloat mq[])
 	GLfloat yz = ra->Y * ra->Z;
 
 	mq[ 0] =          rcos + xx * ircos;
-	mq[ 4] =  ra->Z * rsin + xy * ircos;
-	mq[ 8] = -ra->Y * rsin + yz * ircos;
+	mq[ 1] =  ra->Z * rsin + xy * ircos;
+	mq[ 2] = -ra->Y * rsin + xz * ircos;
 
-	mq[ 1] = -ra->Z * rsin + xy * ircos;
+	mq[ 4] = -ra->Z * rsin + xy * ircos;
 	mq[ 5] =          rcos + yy * ircos;
-	mq[ 9] =  ra->X * rsin + yz * ircos;
+	mq[ 6] =  ra->X * rsin + yz * ircos;
 
-	mq[ 2] =  ra->Y * rsin + xz * ircos;
-	mq[ 6] = -ra->X * rsin + yz * ircos;
+	mq[ 8] =  ra->Y * rsin + xz * ircos;
+	mq[ 9] = -ra->X * rsin + yz * ircos;
 	mq[10] =          rcos + zz * ircos;
 
 	mq[3]  = mq[7] = mq[11] = mq[12] = mq[13] = mq[14] = 0;
 	mq[15] = 1;
+}
+
+void mat4_rotate(const GLfloat angle, const GLfloat axis[3], GLfloat AB[16])
+{
+	GLMotor_RotAxis_t ra = {.A = angle, .X = axis[0], .Z = axis[1], .X = axis[2]};
+	ra2mq(&ra, AB);
+}
+
+void mat4_translate(const GLfloat axis[3], const GLfloat length, GLfloat AB[16])
+{
+	AB[12] += axis[0] * length;
+	AB[13] += axis[1] * length;
+	/**
+	 * !!! I don't understand
+	 * the theory should modify index 14
+	 */
+#if 0
+	AB[14] += axis[2] * length;
+#else
+	AB[11] += axis[2] * length;
+#endif
 }
