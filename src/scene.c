@@ -21,9 +21,6 @@ struct GLMotor_Scene_s
 	GLMotor_t *motor;
 	GLMotor_list_t *objects;
 	GLuint buffermask;
-	GLfloat eye[3];
-	GLfloat center[3];
-	GLfloat up[3];
 	GLfloat view[16];
 	GLfloat *pview;
 	GLfloat background[4];
@@ -64,60 +61,72 @@ GLMOTOR_EXPORT GLMotor_Scene_t *scene_create(GLMotor_t *motor)
 #endif
 
 #if 0
-	/// this is good for £D object but not on plane object
+	/// this is good for 3D object but not on plane object
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+#else
+	glDisable(GL_CULL_FACE);
 #endif
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	GLMotor_Scene_t *scene;
 	scene = calloc(1, sizeof(*scene));
 	scene->motor = motor;
 	scene->buffermask = buffermask;
 	scene_setresolution(scene, motor->width, motor->height);
-	scene->eye[0] = 0.0;
-	scene->eye[1] = 0.0;
-	scene->eye[2] = 1.0;
-	scene->center[0] = 0.0;
-	scene->center[1] = 0.0;
-	scene->center[2] = 0.0;
-	scene->up[0] = 0.0;
-	scene->up[1] = 1.0;
-	scene->up[2] = 0.0;
 	mat4_diag(scene->view);
+	scene->scale = 1.0;
 	return scene;
 }
 
 #if SCENE_MOVECAMERA == y
-GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat *camera, const GLfloat *target)
+GLMOTOR_EXPORT void scene_movecamera(GLMotor_Scene_t *scene, const GLfloat eye[3], const GLfloat center[3])
 {
-	if (camera != NULL)
+	GLfloat up[3] = {0.0,1.0,0.0};
+	if (eye[2] != 0.0)
 	{
-		scene->eye[0] = camera[0];
-		scene->eye[1] = camera[1];
-		scene->eye[2] = camera[2];
+		GLfloat *perspective = scene->view;
+		GLfloat tmp[16];
+		mat4_diag(tmp);
+		if (scene->pview)
+			perspective = tmp;
+		mat4_lookat(eye, center, up, perspective);
+		if (perspective == tmp)
+			mat4_multiply4(tmp, scene->view, scene->view);
+		scene->pview = scene->view;
 	}
-	if (target != NULL)
-	{
-		scene->center[0] = target[0];
-		scene->center[1] = target[1];
-		scene->center[2] = target[2];
-	}
-#ifndef HAVE_GLESV2
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-#endif
-	mat4_lookat(scene->eye, scene->center, scene->up, scene->view);
-	scene->pview = scene->view;
+dbg("move camera");
+mat4_log(scene->view);
 }
-GLMOTOR_EXPORT void scene_perspective(GLMotor_Scene_t *scene, const GLfloat angle, const GLfloat near, const GLfloat far)
+
+static void _scene_perspective(GLMotor_Scene_t *scene, const GLfloat angle, const GLfloat near, const GLfloat far, GLfloat *perspective)
 {
 	GLfloat aspect = ((GLfloat)scene->motor->width) / ((GLfloat)scene->motor->height);
+	mat4_perspective(angle, aspect, near, far, perspective);
+}
+
+static void _scene_ortho(GLMotor_Scene_t *scene, const GLfloat near, const GLfloat far, GLfloat *perspective)
+{
+	GLMotor_t * motor = scene->motor;
+	GLfloat aspect = ((GLfloat)scene->motor->width) / ((GLfloat)scene->motor->height);
+	GLfloat frame[4] = {-1 / (2.0 * aspect), 1 / (2.0 * aspect), -1 / (2.0 * aspect), 1 / (2.0 * aspect)};
+	mat4_ortho(frame, near, far, perspective);
+}
+
+GLMOTOR_EXPORT void scene_perspective(GLMotor_Scene_t *scene, const GLfloat angle, const GLfloat near, const GLfloat far)
+{
 	GLfloat *perspective = scene->view;
 	GLfloat tmp[16];
 	mat4_diag(tmp);
 	if (scene->pview)
 		perspective = tmp;
-	mat4_perspective(angle, aspect, near, far, perspective);
+	if (angle != 0.0)
+		_scene_perspective(scene, angle, near, far, perspective);
+	else if (far != near)
+		_scene_ortho(scene, near, far, perspective);
+	else
+		mat4_diag(perspective);
 	if (perspective == tmp)
 		mat4_multiply4(tmp, scene->view, scene->view);
 	scene->pview = scene->view;
