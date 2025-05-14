@@ -353,19 +353,9 @@ GLMOTOR_EXPORT void surface_destroy(GLMotor_Surface_t *window)
 	eglTerminate(egl_display);
 }
 
-EGLDisplay* glmotor_egldisplay(GLMotor_t *motor)
-{
-	return egl_display;
-}
-
-EGLContext glmotor_eglcontext(GLMotor_t *motor)
-{
-	GLMotor_Surface_t *window = motor->surf;
-	return window->egl_context;
-}
-
 GLMOTOR_EXPORT int glmotor_eglTexImage2D(GLuint texturefamily, GLuint ID, GLuint width, GLuint height, EGLAttrib *attribs)
 {
+		/// eglCreateImage and not eglCreateImageKHR ?
 		EGLImageKHR image = eglCreateImage(egl_display,
 			EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attribs);
 		if (image == EGL_NO_IMAGE_KHR)

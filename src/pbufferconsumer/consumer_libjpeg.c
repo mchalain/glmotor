@@ -11,9 +11,6 @@
 #include "glmotor.h"
 #include "pbufferconsumer/pbufferconsumer.h"
 
-extern EGLDisplay* glmotor_egldisplay(GLMotor_t *motor);
-extern EGLContext glmotor_eglcontext(GLMotor_t *motor);
-
 typedef struct consumer_jpeg_s consumer_jpeg_t;
 struct consumer_jpeg_s
 {
