@@ -58,6 +58,15 @@ static EGLNativeDisplayType native_display()
 	return display;
 }
 
+static GLboolean native_prepare(EGLNativeWindowType native_win, GLMotor_t *motor)
+{
+#if USE_FRAMEBUFFER
+	glBindFramebuffer(GL_FRAMEBUFFER, offscreen->fbo);
+	glBindTexture(GL_TEXTURE_2D, offscreen->texture);
+#endif
+	return 0;
+}
+
 static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor)
 {
 	GLboolean running = GL_TRUE;

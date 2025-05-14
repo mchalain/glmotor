@@ -319,6 +319,13 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 	return window;
 }
 
+GLMOTOR_EXPORT int surface_prepare(GLMotor_Surface_t *surf, GLMotor_t *motor)
+{
+	if (native->prepare)
+		return native->prepare(surf->native_win, motor);
+	return 0;
+}
+
 GLMOTOR_EXPORT int surface_running(GLMotor_Surface_t *surf, GLMotor_t *motor)
 {
 	return native->running(surf->native_win, motor);

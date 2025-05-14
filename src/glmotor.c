@@ -143,6 +143,7 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 	int ret = 0;
 	do
 	{
+		surface_prepare(motor->surf, motor);
 		draw(drawdata);
 #ifdef DEBUG
 		static uint32_t nbframes = 0;

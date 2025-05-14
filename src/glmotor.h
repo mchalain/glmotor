@@ -154,6 +154,7 @@ GLMOTOR_EXPORT void glmotor_destroy(GLMotor_t *motor);
 
 GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int argc, char** argv);
 GLMOTOR_EXPORT int surface_running(GLMotor_Surface_t *surface, GLMotor_t *motor);
+GLMOTOR_EXPORT int surface_prepare(GLMotor_Surface_t *surface, GLMotor_t *motor);
 GLMOTOR_EXPORT GLuint surface_swapbuffers(GLMotor_Surface_t *surf);
 GLMOTOR_EXPORT void surface_destroy(GLMotor_Surface_t *surface);
 
