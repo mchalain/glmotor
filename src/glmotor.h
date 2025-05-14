@@ -28,7 +28,9 @@ extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES;
 # include <GL/glext.h>
 #endif
 
-#define GLMOTOR_DEPTH_BUFFER 0
+#define GLMOTOR_RENDER_BUFFER 0
+#define GLMOTOR_TEX_BUFFER 1
+#define GLMOTOR_DEPTH_BUFFER 1
 #define GLMOTOR_STENCIL_BUFFER 0
 
 #define GLMOTOR_EXPORT
@@ -97,9 +99,10 @@ struct GLMotor_Offscreen_s
 	GLuint width;
 	GLuint height;
 	GLuint fbo;
-	GLuint rbo[2];
+	GLuint rbo_color;
 	GLuint rbo_depth;
-	GLuint texture[2];
+	GLuint rbo_stencil;
+	GLuint texture;
 };
 
 typedef struct GLMotor_s GLMotor_t;

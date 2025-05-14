@@ -32,7 +32,7 @@ static GLMotor_config_t config = {0};
 
 static EGLNativeDisplayType native_display()
 {
-	if (pbufferconsumerhdl)
+	if (pbufferconsumerhdl && pbufferconsumer_create == NULL)
 	{
 		pbufferconsumer_create = dlsym(pbufferconsumerhdl, "pbufferconsumer_create");
 		pbufferconsumer_destroy = dlsym(pbufferconsumerhdl, "pbufferconsumer_destroy");
@@ -63,17 +63,18 @@ static GLboolean native_running(EGLNativeWindowType native_win, GLMotor_t *motor
 	GLboolean running = GL_TRUE;
 	GLuint client = 0;
 	pbufferconsumer_metadata_t metadata = {
-		.target = EGL_GL_TEXTURE_2D,
+		.target = EGL_GL_TEXTURE_2D_KHR,
 		.type = GL_RGBA,
 	};
 #if USE_FRAMEBUFFER
-	metadata.target = EGL_GL_TEXTURE_2D;
-	client = offscreen->texture[0];
-	if (offscreen->rbo[0] != 0)
+	client = offscreen->texture;
+#if 0
+	if (offscreen->rbo != 0)
 	{
 		metadata.target = EGL_GL_RENDERBUFFER;
-		client = offscreen->rbo[0];
+		client = offscreen->rbo;
 	}
+#endif
 #endif
 	if (pbufferconsumerhdl && pbufferconsumer == NULL)
 	{

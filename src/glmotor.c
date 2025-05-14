@@ -82,6 +82,7 @@ GLMOTOR_EXPORT GLMotor_t *glmotor_create(GLMotor_config_t *config, int argc, cha
 
 	if (window == NULL)
 	{
+		warn("glmotor: offscreen mode");
 	}
 #ifdef HAVE_GLEW
 	/**
@@ -186,7 +187,7 @@ GLMOTOR_EXPORT GLMotor_Offscreen_t *glmotor_offscreen_create(GLMotor_config_t *c
 	 * the framebuffer is accessible only if the context is enabledd (eglMakeCurrent)
 	 **/
 	dbg("glmotor: offscreen generator");
-	GLuint fbo = 0, rbo[2] = {0}, rbo_depth = 0, rbo_stencil = 0, texture[2] = {0};
+	GLuint fbo = 0, rbo = 0, rbo_depth = 0, rbo_stencil = 0, texture = 0;
 	GLuint glget = 0;
 	glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &glget);
 	if (glget <= config->width)
@@ -198,12 +199,12 @@ GLMOTOR_EXPORT GLMotor_Offscreen_t *glmotor_offscreen_create(GLMotor_config_t *c
 	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-#if 0
+#if GLMOTOR_RENDER_BUFFER
 	GLuint samples, format , width, height;
 
 	/* Color renderbuffer. */
-	glGenRenderbuffers(1, &rbo[0]);
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo[0]);
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 	/* Storage must be one of: */
 	/* GL_RGBA4, GL_RGB565, GL_RGB5_A1, GL_DEPTH_COMPONENT16, GL_STENCIL_INDEX8. */
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA, config->width, config->height);
@@ -214,36 +215,24 @@ GLMOTOR_EXPORT GLMotor_Offscreen_t *glmotor_offscreen_create(GLMotor_config_t *c
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
 
-#ifdef DOUBLE_IMAGEBUFFER
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo[1]);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB565, config->width, config->height);
-
-	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_INTERNAL_FORMAT, &format);
-	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
-	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
-#endif
 	dbg("glmotor: render frame size %ux%u %u, %u", width, height, samples, format);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo[0]);
-#else
-	glGenTextures(2, &texture[0]);
-
-	glBindTexture(GL_TEXTURE_2D, texture[0]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, config->width, config->height, 0,
-				GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-#ifdef DOUBLE_IMAGEBUFFER
-	glBindTexture(GL_TEXTURE_2D, texture[1]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, config->width, config->height, 0,
-				GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo);
 #endif
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture[0], 0);
+
+#if GLMOTOR_TEX_BUFFER
+	glGenTextures(1, &texture);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, config->width, config->height, 0,
+				GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 #endif
 
 #if GLMOTOR_DEPTH_BUFFER
@@ -274,11 +263,10 @@ GLMOTOR_EXPORT GLMotor_Offscreen_t *glmotor_offscreen_create(GLMotor_config_t *c
 	off->width = config->width;
 	off->height = config->height;
 	off->fbo = fbo;
-	off->rbo[0] = rbo[0];
-	off->rbo[1] = rbo[1];
+	off->rbo_color = rbo;
 	off->rbo_depth = rbo_depth;
-	off->texture[0] = texture[0];
-	off->texture[1] = texture[1];
+	off->rbo_stencil = rbo_stencil;
+	off->texture = texture;
 	return off;
 }
 
@@ -287,4 +275,3 @@ GLMOTOR_EXPORT void glmotor_offscreen_destroy(GLMotor_Offscreen_t *off)
 	glDeleteFramebuffers(1, &off->fbo);
 	free(off);
 }
-
