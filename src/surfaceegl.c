@@ -20,6 +20,8 @@ PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = NULL;
 PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = NULL;
 PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR = NULL;
 PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = NULL;
+PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC eglExportDMABUFImageQueryMESA = NULL;
+PFNEGLEXPORTDMABUFIMAGEMESAPROC eglExportDMABUFImageMESA = NULL;
 
 #define GLMOTOR_SURFACE_S struct GLMotor_Surface_s
 #include "glmotor.h"
@@ -90,6 +92,20 @@ static int init_egl(void)
 	{
 		err("ERROR: extension glEGLImageTargetTexture2DOES not available");
 		return -7;
+	}
+
+	eglExportDMABUFImageQueryMESA = (void *)eglGetProcAddress("eglExportDMABUFImageQueryMESA");
+	if(!eglExportDMABUFImageQueryMESA)
+	{
+		err("ERROR: extension eglExportDMABUFImageQueryMESA not available");
+		return -8;
+	}
+
+	eglExportDMABUFImageMESA = (void *)eglGetProcAddress("eglExportDMABUFImageMESA");
+	if(!eglExportDMABUFImageMESA)
+	{
+		err("ERROR: extension eglExportDMABUFImageMESA not available");
+		return -9;
 	}
 
 	return 0;
