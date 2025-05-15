@@ -299,7 +299,16 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 
 	if (native_win != 0)
 	{
-		egl_surface = eglCreateWindowSurface(egl_display, eglconfig, native_win, NULL);
+#ifdef EGL_ANGLE_SURFACE_RENDER_TO_BACK_BUFFER
+		/// optimization for mobile devices
+		const EGLint attrs[] = {
+			EGL_ANGLE_SURFACE_RENDER_TO_BACK_BUFFER, EGL_TRUE,
+			EGL_NONE
+		}
+#else
+		const EGLint *attrs = NULL;
+#endif
+		egl_surface = eglCreateWindowSurface(egl_display, eglconfig, native_win, attrs);
 	}
 #if USE_PBUFFER
 	else
