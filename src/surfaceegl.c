@@ -316,8 +316,13 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 		EGLint pbufferAttribs[] = {
 			EGL_WIDTH, config->width,
 			EGL_HEIGHT, config->height,
+#if 0
+			/// equivalent to EGL_LARGEST_PBUFFER
 			EGL_TEXTURE_FORMAT, EGL_TEXTURE_RGBA,
 			EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
+#else
+			EGL_LARGEST_PBUFFER, EGL_TRUE,
+#endif
 			EGL_NONE,
 		};
 
