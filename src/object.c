@@ -92,7 +92,7 @@ static GLuint _object_setup(GLMotor_Object_t *obj, GLuint programID)
 	}
 	// assign colors
 	glBindBuffer(GL_ARRAY_BUFFER, obj->ID[2]);
-	size = obj->maxpoints * sizeof(GLfloat) * 3;
+	size = obj->maxpoints * sizeof(GLfloat) * COLOR_COMPONENTS;
 	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
 	obj->color = glGetAttribLocation(obj->programID, "vColor");
 	if (obj->color >= 0)
@@ -208,7 +208,7 @@ GLMOTOR_EXPORT GLuint object_appendcolor(GLMotor_Object_t *obj, GLuint ncolors, 
 	glBufferSubData(GL_ARRAY_BUFFER, offset, ncolors * sizeof(GLfloat) * COLOR_COMPONENTS, colors);
 	obj->ncolors += ncolors;
 	if (obj->ncolors == 1)
-		memcpy(obj->defaultcolor, colors, ncolors * sizeof(GLfloat) * 4);
+		memcpy(obj->defaultcolor, colors, ncolors * sizeof(GLfloat) * COLOR_COMPONENTS);
 	return 0;
 }
 

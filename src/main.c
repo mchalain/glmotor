@@ -107,11 +107,11 @@ GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name, GLuint p
 	GLuint size = sizeof(vVertices) / sizeof(GLfloat) / 3;
 	GLfloat vColors[] = {
 
-		 1.0f, 0.0f, 0.0f, //1.0f, // A
-		 0.0f, 1.0f, 0.0f, //1.0f, // B
-		 0.0f, 0.0f, 1.0f, //1.0f, // C
+		 1.0f, 0.0f, 0.0f, 1.0f, // A
+		 0.0f, 1.0f, 0.0f, 1.0f, // B
+		 0.0f, 0.0f, 1.0f, 1.0f, // C
 
-		 0.0f, 0.0f, 0.0f, //1.0f, // D
+		 0.0f, 0.0f, 0.0f, 1.0f, // D
 	};
 	GLuint ncolors = sizeof(vColors) / sizeof(GLfloat) / COLOR_COMPONENTS;
 	GLuint vFaces[] = {
