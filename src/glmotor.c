@@ -159,18 +159,13 @@ GLMOTOR_EXPORT GLuint glmotor_run(GLMotor_t *motor, GLMotor_Draw_func_t draw, vo
 			nbframes = 0;
 		}
 #endif
-		glmotor_swapbuffers(motor);
+		glFlush();
 		if (motor->surf)
+		{
+			surface_swapbuffers(motor->surf);
 			ret = surface_running(motor->surf, motor);
+		}
 	} while (ret);
-	return 0;
-}
-
-GLMOTOR_EXPORT GLuint glmotor_swapbuffers(GLMotor_t *motor)
-{
-	glFlush();
-	if (motor->surf)
-		return surface_swapbuffers(motor->surf);
 	return 0;
 }
 #endif
