@@ -110,7 +110,6 @@ GLMotor_Object_t *load_staticobject(GLMotor_t *motor, const char *name, GLuint p
 		 1.0f, 0.0f, 0.0f, 1.0f, // A
 		 0.0f, 1.0f, 0.0f, 1.0f, // B
 		 0.0f, 0.0f, 1.0f, 1.0f, // C
-
 		 0.0f, 0.0f, 0.0f, 1.0f, // D
 	};
 	GLuint ncolors = sizeof(vColors) / sizeof(GLfloat) / COLOR_COMPONENTS;
@@ -143,8 +142,8 @@ int main(int argc, char** argv)
 		.width = 640,
 		.height = 480,
 #if SCENE_MOVECAMERA == y
-		.camera = { 0.0f, 0.0f, 1.1f},
-		.perspective = {M_PI / 3, 0.0f, 1.0f},
+		.camera = { 0.0f, 0.0f, 0.0f},
+		.perspective = {0.0, 1.0f, 1.0f},
 #endif
 		.background = {0.0,0.0,0.0,1.0},
 		.zoom = 0.0,
@@ -270,12 +269,10 @@ int main(int argc, char** argv)
 
 	scene_zoom(scene, config.zoom);
 #if SCENE_MOVECAMERA == y
-	GLfloat target[3] = { 0.0f, 0.0f, 0.0f};
-	if (config.camera[2] != 0)
-		scene_movecamera(scene, config.camera, target);
-	if (config.perspective[0] > 0)
-		scene_perspective(scene, config.perspective[0],
-			config.perspective[1], config.perspective[2]);
+	GLfloat target[3] = { config.camera[0], config.camera[1], 0.0f};
+	scene_movecamera(scene, config.camera, target);
+	scene_perspective(scene, config.perspective[0],
+		config.perspective[1], config.perspective[2]);
 #endif
 #ifdef HAVE_LIBINPUT
 	GLMotor_Input_t *input = NULL;
