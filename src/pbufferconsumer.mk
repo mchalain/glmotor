@@ -10,3 +10,6 @@ consumer_ffmpeg_LIBRARY+=libavutil
 lib-$(HAVE_LIBJPEG)+=consumer_libjpeg
 consumer_libjpeg_SOURCES+=pbufferconsumer/consumer_libjpeg.c
 consumer_libjpeg_LIBRARY+=libjpeg
+
+lib-y+=consumer_socket
+consumer_socket_SOURCES+=pbufferconsumer/consumer_socket.c
