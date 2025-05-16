@@ -258,7 +258,7 @@ GLMOTOR_EXPORT GLMotor_Surface_t *surface_create(GLMotor_config_t *config, int a
 			EGL_DEPTH_SIZE, 16,
 #endif
 #if GLMOTOR_STENCIL_BUFFER
-			EGL_STENCIL_SIZE, 16,
+			EGL_STENCIL_SIZE, 8,
 #endif
 			EGL_BUFFER_SIZE, 32,
 			EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
